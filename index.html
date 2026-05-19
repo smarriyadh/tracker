@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Employee Contract Progress Tracker</title>
+  <title>Contract Progress Tracker</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
@@ -23,7 +23,7 @@
     .kpi-card { background: white; border-radius: 24px; padding: 20px; border: 1px solid #e2e8f0; }
     .kpi-card h3 { font-size: 0.85rem; text-transform: uppercase; color: #5a6e7c; margin-bottom: 8px; }
     .kpi-value { font-size: 2rem; font-weight: 700; color: #1f4f82; }
-    .tabs { display: flex; gap: 8px; margin: 20px 0 20px; border-bottom: 1px solid #cbd5e1; }
+    .tabs { display: flex; gap: 8px; margin: 20px 0 20px; border-bottom: 1px solid #cbd5e1; flex-wrap: wrap; }
     .tab-btn { background: none; border: none; padding: 10px 24px; font-weight: 500; cursor: pointer; border-radius: 30px; }
     .tab-btn.active { background: #1f4f82; color: white; }
     .table-container { background: white; border-radius: 24px; padding: 20px; overflow-x: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.02); border: 1px solid #eef2f6; }
@@ -55,11 +55,13 @@
       <button class="tab-btn" data-tab="dashboard">📊 Dashboard</button>
     </div>
     <div id="contracts-tab" class="tab-content">
-      <div style="margin-bottom: 20px;">
+      <div style="margin-bottom: 20px; display: flex; gap: 12px; flex-wrap: wrap;">
         <button class="btn" id="addContractBtn"><i class="fas fa-plus"></i> New Contract</button>
+        <button class="btn" id="importCsvBtn"><i class="fas fa-upload"></i> Import CSV (12 columns)</button>
+        <input type="file" id="csvFileInput" accept=".csv" style="display:none;">
       </div>
       <div class="table-container">
-        <table id="contractsTable" class="display" style="width:100%"></tr>
+        <table id="contractsTable" class="display" style="width:100%"><table>
       </div>
     </div>
     <div id="progress-tab" class="tab-content" style="display:none;">
@@ -76,7 +78,7 @@
   </div>
 </div>
 
-<!-- Modal Add/Edit -->
+<!-- Modal -->
 <div id="contractModal" class="modal">
   <div class="modal-content">
     <h2 id="modalTitle">Add / Edit Contract</h2>
@@ -91,34 +93,37 @@
 </div>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbx4WggdJlbQH6Gs5_UweyiI4-JX9ZrJ6bUVVZXh7Pdv3m-SeiL1LslO7Ze49gXFPA/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzhcbMTMOY9ADL7mtG9I2aKoYTAClRPQc7S9XSmfiNyunJ_JYIXmY_xHNDfBAgQm4Q/exec';
 let contractsData = [];
 let dataTable, progressTable;
 let professionChart, nationalityChart;
 
-// Field definitions (English labels, mapping to Arabic keys)
+// Fields exactly matching your 12 columns (English labels)
 const FIELDS = [
-  { name: 'contractNumber', label: 'Contract Number', type: 'text', required: true, arabicKey: 'رقم العقد' },
-  { name: 'clientName', label: 'Client Name', type: 'text', required: true, arabicKey: 'اسم العميل' },
-  { name: 'employerId', label: 'Employer ID', type: 'text', arabicKey: 'هوية صاحب العمل' },
-  { name: 'issueNumber', label: 'Issue Number', type: 'text', arabicKey: 'رقم الصادر' },
-  { name: 'profession', label: 'Profession', type: 'text', arabicKey: 'المهنة' },
-  { name: 'nationality', label: 'Nationality', type: 'text', arabicKey: 'الجنسية' },
-  { name: 'amountDue', label: 'Amount Due (SAR)', type: 'number', arabicKey: 'المبلغ المستحق' },
-  { name: 'recruitmentDuration', label: 'Recruitment Duration', type: 'text', arabicKey: 'مدة الاستقدام' },
-  { name: 'contractStatus', label: 'Contract Status', type: 'select', options: ['New','Visa Processing','Worker Arrived','Contract Started','Completed','Cancelled'], arabicKey: 'حالة العقد' },
-  { name: 'startDate', label: 'Start Date', type: 'date', arabicKey: 'تاريخ بداية العقد' },
-  { name: 'legacyStatus', label: 'Legacy Status', type: 'text', arabicKey: 'الحالة' },
-  { name: 'serial', label: 'Serial', type: 'text', arabicKey: 'المسلسل' }
+  { name: 'serial', label: 'Serial (المسلسل)', type: 'text', required: false },
+  { name: 'contractNumber', label: 'Contract Number (رقم العقد)', type: 'text', required: true },
+  { name: 'employerId', label: 'Employer ID (هوية صاحب العمل)', type: 'text' },
+  { name: 'issueNumber', label: 'Issue Number (رقم الصادر)', type: 'text' },
+  { name: 'profession', label: 'Profession (المهنة)', type: 'text' },
+  { name: 'nationality', label: 'Nationality (الجنسية)', type: 'text' },
+  { name: 'amountDue', label: 'Amount Due (المبلغ المستحق)', type: 'number' },
+  { name: 'recruitmentDuration', label: 'Recruitment Duration (مدة الاستقدام)', type: 'text' },
+  { name: 'contractStatus', label: 'Contract Status (حالة العقد)', type: 'select', options: ['New','Visa Processing','Worker Arrived','Contract Started','Completed','Cancelled'] },
+  { name: 'startDate', label: 'Start Date (تاريخ بداية العقد)', type: 'date' },
+  { name: 'clientName', label: 'Client Name (اسم العميل)', type: 'text' },
+  { name: 'legacyStatus', label: 'Legacy Status (الحالة)', type: 'text' }
 ];
 
-async function apiCall(action, data = null, employeeName = null) {
+async function apiCall(action, data = null, employeeName = null, contracts = null) {
   let url = `${API_URL}?action=${action}`;
   const options = { method: 'GET' };
-  if (data) {
+  if (data || contracts) {
     options.method = 'POST';
     options.headers = { 'Content-Type': 'application/json' };
-    options.body = JSON.stringify({ data, employeeName });
+    const payload = {};
+    if (data) { payload.data = data; payload.employeeName = employeeName; }
+    if (contracts) { payload.contracts = contracts; payload.employeeName = employeeName; }
+    options.body = JSON.stringify(payload);
   }
   const res = await fetch(url, options);
   return res.json();
@@ -178,14 +183,12 @@ async function loadProgressLog() {
 async function updateKPIs() {
   const json = await apiCall('getDashboard');
   if (!json.success) return;
-  const { totalContracts, activeContracts, totalAmountDue } = json.data;
+  const { totalContracts, activeContracts, totalAmountDue, byProfession, byNationality } = json.data;
   document.getElementById('kpi-cards').innerHTML = `
     <div class="kpi-card"><h3>Total Contracts</h3><div class="kpi-value">${totalContracts}</div></div>
     <div class="kpi-card"><h3>Active Contracts</h3><div class="kpi-value">${activeContracts}</div></div>
     <div class="kpi-card"><h3>Total Amount Due (SAR)</h3><div class="kpi-value">${totalAmountDue.toFixed(2)}</div></div>
   `;
-  // Charts
-  const { byProfession, byNationality } = json.data;
   if (professionChart) professionChart.destroy();
   if (nationalityChart) nationalityChart.destroy();
   professionChart = new Chart(document.getElementById('professionChart'), {
@@ -238,8 +241,60 @@ function switchTab(tab) {
   if (tab === 'dashboard') updateKPIs();
 }
 
+// CSV Import: expects exact 12 headers in order
+async function importCSV(file) {
+  const text = await file.text();
+  const lines = text.split(/\r?\n/);
+  if (lines.length < 2) { alert('CSV has no data rows'); return; }
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+  const expectedHeaders = ['المسلسل','رقم العقد','هوية صاحب العمل','رقم الصادر','المهنة','الجنسية','المبلغ المستحق','مدة الاستقدام','حالة العقد','تاريخ بداية العقد','اسم العميل','الحالة'];
+  for (let i=0; i<expectedHeaders.length; i++) {
+    if (headers[i] !== expectedHeaders[i]) {
+      alert(`Header mismatch: expected "${expectedHeaders[i]}" but got "${headers[i]}"`);
+      return;
+    }
+  }
+  const contracts = [];
+  for (let i=1; i<lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    // Simple CSV parsing (assumes no commas inside quoted fields)
+    const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+    if (values.length < 12) continue;
+    const contract = {
+      serial: values[0],
+      contractNumber: values[1],
+      employerId: values[2],
+      issueNumber: values[3],
+      profession: values[4],
+      nationality: values[5],
+      amountDue: values[6],
+      recruitmentDuration: values[7],
+      contractStatus: values[8],
+      startDate: values[9],
+      clientName: values[10],
+      legacyStatus: values[11]
+    };
+    contracts.push(contract);
+  }
+  if (contracts.length === 0) { alert('No valid contracts found in CSV'); return; }
+  const employeeName = document.getElementById('employeeName').value.trim();
+  if (!employeeName) { alert('Enter your name before importing'); return; }
+  const json = await apiCall('bulkImport', null, employeeName, contracts);
+  if (json.success) {
+    alert(`Imported ${json.data.added} new contracts. Skipped ${json.data.skipped} duplicates.`);
+    loadContracts();
+  } else {
+    alert('Import failed: ' + json.error);
+  }
+}
+
 document.getElementById('addContractBtn').onclick = () => openModal();
 document.getElementById('closeModal').onclick = closeModal;
+document.getElementById('importCsvBtn').onclick = () => document.getElementById('csvFileInput').click();
+document.getElementById('csvFileInput').onchange = async (e) => {
+  if (e.target.files.length) await importCSV(e.target.files[0]);
+  e.target.value = '';
+};
 document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 window.onload = () => { loadContracts(); switchTab('contracts'); };
 </script>
