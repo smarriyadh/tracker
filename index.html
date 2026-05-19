@@ -2,44 +2,33 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recruitment Contract Manager</title>
-  <!-- Google Fonts & Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <!-- DataTables & Charts -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Google Sign-In -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
+    /* same as before – copy from previous answer */
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
     body { background: #f4f7fc; padding: 24px; color: #1e2a3a; }
     .container { max-width: 1400px; margin: 0 auto; }
-    /* header & login */
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
     h1 { font-size: 1.8rem; font-weight: 600; background: linear-gradient(135deg, #1e3c72, #2b4c7c); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .login-card { background: white; padding: 8px 20px; border-radius: 40px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 12px; }
-    #user-email { font-size: 0.9rem; color: #2c3e50; }
-    #signout-btn { background: none; border: none; color: #e74c3c; cursor: pointer; font-weight: 500; }
-    /* KPI row */
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 20px; margin-bottom: 32px; }
-    .kpi-card { background: white; border-radius: 24px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.2s; border: 1px solid #e2e8f0; }
+    .kpi-card { background: white; border-radius: 24px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid #e2e8f0; }
     .kpi-card h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #5a6e7c; margin-bottom: 8px; }
     .kpi-value { font-size: 2rem; font-weight: 700; color: #1f4f82; }
-    /* alerts */
     .alert-section { background: #fff9e6; border-left: 6px solid #f39c12; padding: 16px 24px; border-radius: 20px; margin-bottom: 28px; }
     .alert-title { font-weight: 600; margin-bottom: 12px; color: #c47a0c; }
     .alert-list { display: flex; flex-wrap: wrap; gap: 16px; }
     .alert-badge { background: #fef3c7; padding: 8px 16px; border-radius: 40px; font-size: 0.85rem; }
-    /* tabs & table */
     .tabs { display: flex; gap: 8px; margin: 20px 0 20px; border-bottom: 1px solid #cbd5e1; }
     .tab-btn { background: none; border: none; padding: 10px 24px; font-weight: 500; cursor: pointer; border-radius: 30px; transition: 0.2s; }
     .tab-btn.active { background: #1f4f82; color: white; }
     .table-container { background: white; border-radius: 24px; padding: 20px; overflow-x: auto; box-shadow: 0 6px 14px rgba(0,0,0,0.02); border: 1px solid #eef2f6; }
-    table { width: 100%; }
     .btn { background: #1f4f82; border: none; color: white; padding: 8px 16px; border-radius: 30px; cursor: pointer; margin: 4px; font-size: 0.8rem; }
     .btn-outline { background: transparent; border: 1px solid #1f4f82; color: #1f4f82; }
     .btn-danger { background: #e74c3c; }
@@ -53,21 +42,17 @@
   </style>
 </head>
 <body>
-<div class="container" id="app">
+<div class="container">
   <div class="header">
     <h1><i class="fas fa-file-contract"></i> Recruitment Contract Manager</h1>
-    <div id="auth-container"></div>
+    <div style="font-size: 0.85rem; color: #5a6e7c;">No login required</div>
   </div>
-  <div id="dashboard-content" style="display: none;">
-    <!-- KPIs -->
+  <div id="dashboard-content">
     <div class="kpi-grid" id="kpi-cards"></div>
-    <!-- Alerts -->
     <div class="alert-section" id="alerts-area"></div>
-    <!-- Tabs -->
     <div class="tabs">
       <button class="tab-btn active" data-tab="contracts">📄 Contracts</button>
       <button class="tab-btn" data-tab="dashboard">📊 Dashboard Charts</button>
-      <button class="tab-btn" data-tab="audit" id="audit-tab" style="display:none;">📜 Audit Log</button>
     </div>
     <div id="contracts-tab" class="tab-content">
       <div style="margin-bottom: 20px; display: flex; gap: 12px; flex-wrap: wrap;">
@@ -84,18 +69,14 @@
         <canvas id="expiryChart" width="400" height="300"></canvas>
       </div>
     </div>
-    <div id="audit-tab-content" class="tab-content" style="display:none;">
-      <div class="table-container"><table id="auditTable" class="display"></table></div>
-    </div>
   </div>
 </div>
 
-<!-- Modal for Add/Edit Contract -->
+<!-- Modal -->
 <div id="contractModal" class="modal">
   <div class="modal-content">
     <h2 id="modalTitle">Add Contract</h2>
     <form id="contractForm" class="form-grid">
-      <!-- dynamically generated fields -->
       <div id="form-fields"></div>
       <div style="grid-column: span 2; text-align: right; margin-top: 16px;">
         <button type="button" class="btn-outline" id="closeModal">Cancel</button>
@@ -107,15 +88,11 @@
 
 <script>
 // ---------- GLOBALS ----------
-let currentUser = null;
-let isAdmin = false;
 let contractsData = [];
 let dataTable = null;
-let auditTable = null;
-const API_URL = 'https://script.google.com/macros/s/AKfycbyrxgekVdaoJj2E0Lh-rSk_7tG9t27o8otRR7z0dAwlWF3Xp-l8FBerAdQQxtrdjn8/exec'; // Replace after deployment
 let agentChart, expiryChart;
+const API_URL = 'https://script.google.com/macros/s/AKfycbweI9qIO4ZSb-DYbICb7TKu-we0BIrLregug9nDySEWFT-MKXvCeHjyb-jNlOexln4/exec'; // Replace
 
-// Field definitions (matching backend)
 const ALL_FIELDS = [
   { name: 'contractNumber', label: 'Contract Number', type: 'text', required: true },
   { name: 'clientName', label: 'Client Name', type: 'text', required: true },
@@ -133,53 +110,29 @@ const ALL_FIELDS = [
   { name: 'notes', label: 'Notes', type: 'textarea' }
 ];
 
-// ---------- AUTH ----------
-function handleCredentialResponse(response) {
-  const idToken = response.credential;
-  fetch(`${API_URL}?action=getContracts&token=${idToken}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        currentUser = { token: idToken, email: decodeJwt(idToken).email };
-        document.getElementById('dashboard-content').style.display = 'block';
-        document.getElementById('auth-container').innerHTML = `<div class="login-card"><span id="user-email">${currentUser.email}</span><button id="signout-btn">Sign out</button></div>`;
-        checkAdminStatus();
-        loadAllData();
-      } else alert('Access Denied: ' + data.error);
-    }).catch(err => alert('Auth failed'));
-}
-
-function decodeJwt(token) { return JSON.parse(atob(token.split('.')[1])); }
-
-window.onload = () => {
-  google.accounts.id.initialize({ client_id: 'YOUR_GOOGLE_CLIENT_ID', callback: handleCredentialResponse });
-  google.accounts.id.renderButton(document.getElementById('auth-container'), { theme: 'outline', size: 'large' });
-  document.addEventListener('click', (e) => {
-    if (e.target.id === 'signout-btn') { google.accounts.id.disableAutoSelect(); location.reload(); }
-    if (e.target.id === 'addContractBtn') openModal();
-    if (e.target.id === 'closeModal') closeModal();
-  });
-  document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
-};
-
-async function checkAdminStatus() {
-  const resp = await fetch(`${API_URL}?action=getAuditLog&token=${currentUser.token}`);
-  const json = await resp.json();
-  isAdmin = !json.error;
-  if (isAdmin) document.getElementById('audit-tab').style.display = 'block';
+// ---------- API calls (no token) ----------
+async function apiCall(action, data = null, id = null) {
+  let url = `${API_URL}?action=${action}`;
+  if (id) url += `&id=${id}`;
+  const options = { method: 'GET' };
+  if (data) {
+    options.method = 'POST';
+    options.headers = { 'Content-Type': 'application/json' };
+    options.body = JSON.stringify({ data });
+  }
+  const res = await fetch(url, options);
+  return res.json();
 }
 
 async function loadAllData() {
-  const res = await fetch(`${API_URL}?action=getContracts&token=${currentUser.token}`);
-  const json = await res.json();
+  const json = await apiCall('getContracts');
   if (json.success) contractsData = json.data;
   renderTable();
   loadDashboardStats();
 }
 
 async function loadDashboardStats() {
-  const res = await fetch(`${API_URL}?action=getDashboard&token=${currentUser.token}`);
-  const json = await res.json();
+  const json = await apiCall('getDashboard');
   if (!json.success) return;
   const { kpis, expiringContracts, overduePayments, contractsByAgent } = json.data;
   document.getElementById('kpi-cards').innerHTML = `
@@ -188,11 +141,12 @@ async function loadDashboardStats() {
     <div class="kpi-card"><h3>Expiring this month</h3><div class="kpi-value">${kpis.expiringThisMonth}</div></div>
     <div class="kpi-card"><h3>Overdue Payments</h3><div class="kpi-value">${overduePayments.length}</div></div>
   `;
-  const alertsHtml = `<div class="alert-title"><i class="fas fa-bell"></i> Expiring Soon</div><div class="alert-list">${expiringContracts.map(c => `<span class="alert-badge">${c.contractNumber} - ${c.clientName} (${c.daysLeft} days)</span>`).join('') || 'None'}</div>
-  <div class="alert-title mt-2"><i class="fas fa-exclamation-triangle"></i> Overdue Payments</div><div class="alert-list">${overduePayments.map(c => `<span class="alert-badge">${c.contractNumber} - ${c.clientName} | Due: ${c.amountDue}</span>`).join('') || 'None'}</div>`;
-  document.getElementById('alerts-area').innerHTML = alertsHtml;
-
-  // update charts
+  document.getElementById('alerts-area').innerHTML = `
+    <div class="alert-title"><i class="fas fa-bell"></i> Expiring Soon (≤30 days)</div>
+    <div class="alert-list">${expiringContracts.map(c => `<span class="alert-badge">${c.contractNumber} - ${c.clientName} (${c.daysLeft} days)</span>`).join('') || 'None'}</div>
+    <div class="alert-title mt-2"><i class="fas fa-exclamation-triangle"></i> Overdue Payments</div>
+    <div class="alert-list">${overduePayments.map(c => `<span class="alert-badge">${c.contractNumber} - ${c.clientName} | Due: ${c.amountDue}</span>`).join('') || 'None'}</div>
+  `;
   if (agentChart) agentChart.destroy();
   if (expiryChart) expiryChart.destroy();
   const ctx1 = document.getElementById('agentChart').getContext('2d');
@@ -210,21 +164,20 @@ function renderTable() {
     { data: 'paymentStatus', title: 'Payment' },
     { data: 'amountDue', title: 'Amount Due' },
     { data: 'contractEndDate', title: 'End Date' },
-    { data: null, title: 'Actions', render: (data) => `<button class="btn-outline edit-btn" data-id="${data.id}">Edit</button> ${isAdmin ? `<button class="btn-danger delete-btn" data-id="${data.id}">Delete</button>` : ''}` }
+    { data: null, title: 'Actions', render: (data) => `<button class="btn-outline edit-btn" data-id="${data.id}">Edit</button> <button class="btn-danger delete-btn" data-id="${data.id}">Delete</button>` }
   ];
   if (!dataTable) {
-    dataTable = $('#contractsTable').DataTable({ data: contractsData, columns, dom: 'Bfrtip', pageLength: 15 });
+    dataTable = $('#contractsTable').DataTable({ data: contractsData, columns, pageLength: 15 });
   } else {
     dataTable.clear().rows.add(contractsData).draw();
   }
-  $('#contractsTable tbody').on('click', '.edit-btn', function() { const id = $(this).data('id'); openModal(id); });
-  $('.delete-btn').on('click', async function() { if(confirm('Delete?')) await deleteContract($(this).data('id')); });
+  $('#contractsTable tbody').off('click', '.edit-btn').on('click', '.edit-btn', function() { openModal($(this).data('id')); });
+  $('#contractsTable tbody').off('click', '.delete-btn').on('click', '.delete-btn', async function() { if(confirm('Delete contract permanently?')) await deleteContract($(this).data('id')); });
 }
 
 async function deleteContract(id) {
-  const formData = new FormData(); formData.append('token', currentUser.token); formData.append('action', 'deleteContract'); formData.append('id', id);
-  const res = await fetch(`${API_URL}?action=deleteContract&token=${currentUser.token}&id=${id}`, { method: 'POST' });
-  if ((await res.json()).success) loadAllData();
+  const json = await apiCall('deleteContract', null, id);
+  if (json.success) loadAllData();
 }
 
 function openModal(id = null) {
@@ -246,23 +199,21 @@ function openModal(id = null) {
     const data = Object.fromEntries(formData.entries());
     data.id = id || null;
     const action = id ? 'updateContract' : 'addContract';
-    const res = await fetch(`${API_URL}?action=${action}&token=${currentUser.token}`, { method: 'POST', body: JSON.stringify({ token: currentUser.token, data }), headers: { 'Content-Type': 'application/json' } });
-    if ((await res.json()).success) { closeModal(); loadAllData(); }
+    const json = await apiCall(action, data);
+    if (json.success) { closeModal(); loadAllData(); }
   };
 }
 function closeModal() { document.getElementById('contractModal').style.display = 'none'; }
 function switchTab(tab) {
   document.getElementById('contracts-tab').style.display = tab === 'contracts' ? 'block' : 'none';
   document.getElementById('dashboard-tab').style.display = tab === 'dashboard' ? 'block' : 'none';
-  document.getElementById('audit-tab-content').style.display = tab === 'audit' ? 'block' : 'none';
-  if (tab === 'audit' && isAdmin) loadAuditLog();
 }
-async function loadAuditLog() {
-  const res = await fetch(`${API_URL}?action=getAuditLog&token=${currentUser.token}`);
-  const data = (await res.json()).data || [];
-  if (auditTable) auditTable.clear().rows.add(data).draw();
-  else auditTable = $('#auditTable').DataTable({ data, columns: [{ data: 'timestamp' },{ data: 'user' },{ data: 'action' },{ data: 'contractId' }] });
-}
+
+// Event listeners
+document.getElementById('addContractBtn').onclick = () => openModal();
+document.getElementById('closeModal').onclick = closeModal;
+document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+window.onload = () => { loadAllData(); };
 </script>
 </body>
 </html>
