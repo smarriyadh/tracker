@@ -10,6 +10,8 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- SheetJS for XLSX parsing -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
     body { background: #f4f7fc; padding: 24px; color: #1e2a3a; }
@@ -57,16 +59,16 @@
     <div id="contracts-tab" class="tab-content">
       <div style="margin-bottom: 20px; display: flex; gap: 12px; flex-wrap: wrap;">
         <button class="btn" id="addContractBtn"><i class="fas fa-plus"></i> New Contract</button>
-        <button class="btn" id="importCsvBtn"><i class="fas fa-upload"></i> Import CSV (12 columns)</button>
-        <input type="file" id="csvFileInput" accept=".csv" style="display:none;">
+        <button class="btn" id="importBtn"><i class="fas fa-upload"></i> Import Excel / CSV</button>
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none;">
       </div>
       <div class="table-container">
-        <table id="contractsTable" class="display" style="width:100%"><table>
+        <table id="contractsTable" class="display" style="width:100%"></table>
       </div>
     </div>
     <div id="progress-tab" class="tab-content" style="display:none;">
       <div class="table-container">
-        <table id="progressTable" class="display" style="width:100%"></table>
+        <table id="progressTable" class="display" style="width:100%"><table>
       </div>
     </div>
     <div id="dashboard-tab" class="tab-content" style="display:none;">
@@ -98,7 +100,7 @@ let contractsData = [];
 let dataTable, progressTable;
 let professionChart, nationalityChart;
 
-// Fields exactly matching your 12 columns (English labels)
+// Fields matching your 12 Arabic columns
 const FIELDS = [
   { name: 'serial', label: 'Serial (المسلسل)', type: 'text', required: false },
   { name: 'contractNumber', label: 'Contract Number (رقم العقد)', type: 'text', required: true },
@@ -241,42 +243,53 @@ function switchTab(tab) {
   if (tab === 'dashboard') updateKPIs();
 }
 
-// CSV Import: expects exact 12 headers in order
-async function importCSV(file) {
-  const text = await file.text();
-  const lines = text.split(/\r?\n/);
-  if (lines.length < 2) { alert('CSV has no data rows'); return; }
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+// Universal file import (XLSX, XLS, CSV)
+async function importFile(file) {
+  const fileName = file.name;
+  const extension = fileName.split('.').pop().toLowerCase();
+  let rows = [];
+  if (extension === 'csv') {
+    const text = await file.text();
+    rows = parseCSV(text);
+  } else if (extension === 'xlsx' || extension === 'xls') {
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data, { type: 'array' });
+    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+    rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
+  } else {
+    alert('Unsupported file type. Please upload .xlsx, .xls, or .csv');
+    return;
+  }
+  if (rows.length < 2) { alert('File has no data rows'); return; }
+  const headers = rows[0].map(cell => String(cell || '').trim());
   const expectedHeaders = ['المسلسل','رقم العقد','هوية صاحب العمل','رقم الصادر','المهنة','الجنسية','المبلغ المستحق','مدة الاستقدام','حالة العقد','تاريخ بداية العقد','اسم العميل','الحالة'];
   for (let i=0; i<expectedHeaders.length; i++) {
     if (headers[i] !== expectedHeaders[i]) {
-      alert(`Header mismatch: expected "${expectedHeaders[i]}" but got "${headers[i]}"`);
+      alert(`Header mismatch at column ${i+1}: expected "${expectedHeaders[i]}" but got "${headers[i]}"`);
       return;
     }
   }
   const contracts = [];
-  for (let i=1; i<lines.length; i++) {
-    if (!lines[i].trim()) continue;
-    // Simple CSV parsing (assumes no commas inside quoted fields)
-    const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-    if (values.length < 12) continue;
+  for (let i=1; i<rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.length < 12) continue;
     const contract = {
-      serial: values[0],
-      contractNumber: values[1],
-      employerId: values[2],
-      issueNumber: values[3],
-      profession: values[4],
-      nationality: values[5],
-      amountDue: values[6],
-      recruitmentDuration: values[7],
-      contractStatus: values[8],
-      startDate: values[9],
-      clientName: values[10],
-      legacyStatus: values[11]
+      serial: row[0]?.toString().trim() || '',
+      contractNumber: row[1]?.toString().trim() || '',
+      employerId: row[2]?.toString().trim() || '',
+      issueNumber: row[3]?.toString().trim() || '',
+      profession: row[4]?.toString().trim() || '',
+      nationality: row[5]?.toString().trim() || '',
+      amountDue: row[6]?.toString().trim() || '',
+      recruitmentDuration: row[7]?.toString().trim() || '',
+      contractStatus: row[8]?.toString().trim() || '',
+      startDate: row[9]?.toString().trim() || '',
+      clientName: row[10]?.toString().trim() || '',
+      legacyStatus: row[11]?.toString().trim() || ''
     };
-    contracts.push(contract);
+    if (contract.contractNumber) contracts.push(contract);
   }
-  if (contracts.length === 0) { alert('No valid contracts found in CSV'); return; }
+  if (contracts.length === 0) { alert('No valid contracts found'); return; }
   const employeeName = document.getElementById('employeeName').value.trim();
   if (!employeeName) { alert('Enter your name before importing'); return; }
   const json = await apiCall('bulkImport', null, employeeName, contracts);
@@ -288,11 +301,26 @@ async function importCSV(file) {
   }
 }
 
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/);
+  return lines.map(line => {
+    // Simple CSV split (handles quotes roughly)
+    const regex = /(".*?"|[^,]*)(,|$)/g;
+    const matches = [];
+    let match;
+    while ((match = regex.exec(line)) !== null) {
+      if (match[1] !== undefined) matches.push(match[1].replace(/^"|"$/g, ''));
+      if (match[2] === '') break;
+    }
+    return matches;
+  }).filter(row => row.length > 0);
+}
+
 document.getElementById('addContractBtn').onclick = () => openModal();
 document.getElementById('closeModal').onclick = closeModal;
-document.getElementById('importCsvBtn').onclick = () => document.getElementById('csvFileInput').click();
-document.getElementById('csvFileInput').onchange = async (e) => {
-  if (e.target.files.length) await importCSV(e.target.files[0]);
+document.getElementById('importBtn').onclick = () => document.getElementById('fileInput').click();
+document.getElementById('fileInput').onchange = async (e) => {
+  if (e.target.files.length) await importFile(e.target.files[0]);
   e.target.value = '';
 };
 document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
