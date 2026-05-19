@@ -101,22 +101,22 @@
     }
     
     // API call wrapper
-    async function apiCall(action, data = null, employeeName = null, contracts = null) {
-        let url = `${API_URL}?action=${action}`;
-        const options = { method: 'GET' };
-        if (data || contracts) {
-            options.method = 'POST';
-            options.headers = { 'Content-Type': 'application/json' };
-            const payload = {};
-            if (data) { payload.data = data; payload.employeeName = employeeName; }
-            if (contracts) { payload.contracts = contracts; payload.employeeName = employeeName; }
-            options.body = JSON.stringify(payload);
-        }
-        const response = await fetch(url, options);
-        const json = await response.json();
-        if (!json.success) throw new Error(json.error || 'API request failed');
-        return json.data;
-    }
+async function apiCall(action, data = null, employeeName = null, contracts = null) {
+  let url = `${API_URL}?action=${action}`;
+  const options = { method: 'GET' };
+  if (data || contracts) {
+    options.method = 'POST';
+    options.headers = { 'Content-Type': 'text/plain' };  // ✅ This avoids preflight
+    const payload = {};
+    if (data) { payload.data = data; payload.employeeName = employeeName; }
+    if (contracts) { payload.contracts = contracts; payload.employeeName = employeeName; }
+    options.body = JSON.stringify(payload);
+  }
+  const response = await fetch(url, options);
+  const json = await response.json();
+  if (!json.success) throw new Error(json.error || 'API request failed');
+  return json.data;
+}
     
     // Load contracts and render table
     async function loadContracts() {
