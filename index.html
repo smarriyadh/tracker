@@ -81,30 +81,28 @@
 </div>
 
 <script>
-    // ⚠️ REPLACE WITH YOUR DEPLOYED APP SCRIPT URL
     const API_URL = 'https://script.google.com/macros/s/AKfycbz4ucI3qzQcDKmftv6r-uvRWlIdVmM-9P4dP9Ayu3YeMVdgTJwg1dSIL-LU2egF9Xw/exec';
     
     let STAFF_PIN = sessionStorage.getItem('staff_pin');
 
-    // Dynamic Header Dictionary (Handles both template layouts)
+    // قاموس المترادفات المحسّن لضمان جلب كافة الحقول دون فراغات
     const HEADER_ALIASES = {
         contractNumber: ['رقم العقد', 'رقم_العقد', 'contract no'],
-        issueNumber: ['رقم الصادر', 'رقم التاشيرة', 'visa'],
-        employerId: ['هوية صاحب العمل', 'رقم الهوية'],
+        issueNumber: ['رقم الصادر', 'رقم التاشيرة', 'رقم التأشيرة', 'visa'],
+        employerId: ['هوية صاحب العمل', 'رقم الهوية', 'هوية العميل'],
         clientName: ['اسم العميل', 'العميل'],
-        workerName: ['اسم الخادمة', 'اسم الموظف', 'كاتب العقد', 'worker'],
+        workerName: ['اسم الخادمة', 'اسم العاملة', 'worker'],
         nationality: ['الجنسية', 'الدولة'],
         profession: ['المهنة', 'مهنة'],
-        amountDue: ['المبلغ المستحق', 'السعر المعتمد'],
-        duration: ['مدة الاستقدام', 'مدة العقد'],
-        startDate: ['تاريخ بداية العقد', 'تاريخ التقديم'],
+        amountDue: ['المبلغ المستحق', 'السعر المعتمد', 'السعر'],
+        duration: ['مدة الاستقدام', 'مدة العقد', 'المدة'],
+        startDate: ['تاريخ بداية العقد', 'تاريخ التقديم', 'تاريخ البدء'],
         arrivalDate: ['تاريخ الوصول', 'تاريخ وصول'],
         contractStatus: ['حالة العقد', 'حالة_العقد', 'الحالة']
     };
 
     const SYSTEM_STATUSES = ['جديد', 'قيد المعالجة', 'تم الوصول', 'بدء العقد', 'مكتمل', 'ملغي'];
 
-    // --- Authentication ---
     if (STAFF_PIN) { showApp(); loadContracts(); }
 
     function login() {
@@ -126,7 +124,6 @@
         if (type !== 'error') setTimeout(() => el.className = 'status-msg', 5000);
     }
 
-    // --- API & Core Logic ---
     async function apiCall(action, payload = null) {
         const url = `${API_URL}?action=${action}&token=${encodeURIComponent(STAFF_PIN)}`;
         const options = { redirect: 'follow' };
@@ -147,28 +144,32 @@
         return json.data;
     }
 
-    function cleanFormat(val) {
+    // دالة مخصصة حصرياً لتنظيف التواريخ وفصل الوقت دون التأثير على الأسماء والنصوص
+    function cleanDateFormat(val) {
         if (!val) return '';
         let str = String(val).trim();
         
-        // التحديث الجديد: إذا كانت الخلية تحتوي على مسافة تفصل بين التاريخ والوقت (مثل: 9/15/2025 13:34)، يتم أخذ التاريخ وفصل الوقت فوراً.
         if (str.includes(' ')) {
             str = str.split(' ')[0];
         }
 
-        // Convert Excel serial dates
         const num = parseFloat(str);
         if (!isNaN(num) && num > 25000 && num < 70000) { 
             const d = new Date((num - 25569) * 86400 * 1000);
             d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
             return d.toLocaleDateString();
         }
-        // Fix weird custom RTL dates like 152025/9/
         if (/^\d{6,}\/\d+\/?$/.test(str)) {
             const clean = str.replace(/[\/]/g, ''); 
             return `${clean.substring(2, 6)}-${clean.substring(6).padStart(2,'0')}-${clean.substring(0, 2).padStart(2,'0')}`;
         }
-        return str.split('T')[0]; // Clean JSON timestamps if present
+        return str.split('T')[0];
+    }
+
+    // دالة لتنظيف النصوص العامة (مثل الأسماء) لتبقى كاملة دون تقطيع
+    function cleanGeneralFormat(val) {
+        if (!val) return '';
+        return String(val).trim();
     }
 
     async function loadContracts() {
@@ -190,18 +191,17 @@
                 <tr>
                     <td><button class="btn-save" data-id="${c.contractNumber}">حفظ</button></td>
                     <td><select class="status-select" data-id="${c.contractNumber}">${opts}</select></td>
-                    <td><strong>${cleanFormat(c.contractNumber)}</strong></td>
-                    <td>${cleanFormat(c.issueNumber)}</td>
-                    <td>${cleanFormat(c.clientName)}</td>
-                    <td>${cleanFormat(c.workerName)}</td>
-                    <td>${cleanFormat(c.nationality)}</td>
-                    <td>${cleanFormat(c.profession)}</td>
-                    <td>${cleanFormat(c.amountDue)}</td>
-                    <td dir="ltr" style="text-align:right;">${cleanFormat(c.startDate)}</td>
+                    <td><strong>${cleanGeneralFormat(c.contractNumber)}</strong></td>
+                    <td>${cleanGeneralFormat(c.issueNumber)}</td>
+                    <td>${cleanGeneralFormat(c.clientName)}</td>
+                    <td>${cleanGeneralFormat(c.workerName)}</td>
+                    <td>${cleanGeneralFormat(c.nationality)}</td>
+                    <td>${cleanGeneralFormat(c.profession)}</td>
+                    <td>${cleanGeneralFormat(c.amountDue)}</td>
+                    <td dir="ltr" style="text-align:right;">${cleanDateFormat(c.startDate)}</td>
                 </tr>
             `}).join('');
 
-            // Attach save events
             document.querySelectorAll('.btn-save').forEach(btn => {
                 btn.addEventListener('click', async () => {
                     const id = btn.getAttribute('data-id');
@@ -217,7 +217,6 @@
         } catch (err) { setStatus('❌ فشل التحميل: ' + err.message, 'error'); }
     }
 
-    // --- Dynamic Upload Logic ---
     document.getElementById('fileInput').addEventListener('change', async (e) => {
         if (!e.target.files.length) return;
         const file = e.target.files[0];
@@ -226,7 +225,6 @@
         try {
             const data = await file.arrayBuffer();
             const workbook = XLSX.read(data, { cellDates: false });
-            // raw: false extracts visual text, preventing formula and raw serial issues
             const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: "", raw: false });
             
             if (rows.length < 2) throw new Error('الملف فارغ');
@@ -234,7 +232,6 @@
             const fileHeaders = rows[0].map(h => String(h).trim().toLowerCase());
             const indexMap = {};
 
-            // Dynamically find where each column is based on aliases
             Object.keys(HEADER_ALIASES).forEach(key => {
                 indexMap[key] = fileHeaders.findIndex(h => HEADER_ALIASES[key].some(alias => h.includes(alias.toLowerCase())));
             });
@@ -245,8 +242,6 @@
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
                 
-                // FALLBACK LOGIC: Try to get Contract Number. If it doesn't exist, use Visa Number. 
-                // If BOTH don't exist, skip the row.
                 let primaryId = '';
                 if (indexMap.contractNumber !== -1 && row[indexMap.contractNumber]) {
                     primaryId = String(row[indexMap.contractNumber]).trim();
@@ -254,30 +249,28 @@
                     primaryId = String(row[indexMap.issueNumber]).trim();
                 }
                 
-                if (!primaryId) continue; // Skip empty/invalid rows
+                if (!primaryId) continue;
 
                 const item = {};
                 Object.keys(indexMap).forEach(key => {
                     let val = indexMap[key] !== -1 ? row[indexMap[key]] : '';
                     
-                    // التحديث الجديد: تنظيف التواريخ فوراً وفصل الوقت عند سحبها من ملف الإكسل لمنع دخول الوقت إلى الشيت الرئيسي
+                    // التمييز الذكي: تنظيف التاريخ فقط كتواريخ، والنصوص الأخرى كنصوص كاملة
                     if (key === 'startDate' || key === 'arrivalDate') {
-                        val = cleanFormat(val);
+                        item[key] = cleanDateFormat(val);
+                    } else {
+                        item[key] = cleanGeneralFormat(val);
                     }
-                    
-                    item[key] = val;
                 });
                 
-                // Ensure the system always has a primary ID saved in the contractNumber field for the database
                 item.contractNumber = primaryId; 
-                
                 toImport.push(item);
             }
 
             setStatus(`جاري مزامنة ${toImport.length} عقد مع السجل...`, 'info');
             const res = await apiCall('bulkImport', { contracts: toImport });
             setStatus(`✅ اكتمل الرفع: تمت إضافة ${res.added}، وتخطي ${res.skipped} مكرر`, 'success');
-            loadContracts(); // Refresh table automatically
+            loadContracts(); 
         } catch (err) {
             setStatus('❌ فشل الرفع: ' + err.message, 'error');
         }
