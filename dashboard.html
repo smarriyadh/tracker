@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Management Tracking Dashboard</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; margin: 0; padding: 20px; background: #f8fafc; color: #1e293b; }
+        .container { max-width: 1400px; margin: auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h1 { border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;}
+        button { padding: 8px 16px; background: #0f172a; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        button:hover { background: #334155; }
+        .table-container { overflow-x: auto; margin-top: 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
+        th, td { border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; padding: 12px; text-align: left; }
+        th { background: #f1f5f9; font-weight: 600; }
+        .badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; background: #e2e8f0; }
+        .badge-status { background: #dbeafe; color: #1e40af; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>
+        📊 Executive Contract Tracker
+        <button onclick="loadData()">🔄 Refresh Data</button>
+    </h1>
+    
+    <div id="status" style="margin-bottom: 20px; color: #64748b;">Awaiting PIN authentication...</div>
+
+    <h3>Active Contracts</h3>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Contract No.</th><th>Client Name</th><th>Profession</th><th>Nationality</th>
+                    <th>Status</th><th>Amount Due</th><th>Start Date</th><th>Staff Assigned</th>
+                </tr>
+            </thead>
+            <tbody id="contractsBody"><tr><td colspan="8">Loading...</td></tr></tbody>
+        </table>
+    </div>
+
+    <h3 style="margin-top: 40px;">System Activity Log</h3>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr><th>Date & Time</th><th>Contract No.</th><th>Old Status</th><th>New Status</th></tr>
+            </thead>
+            <tbody id="logBody"><tr><td colspan="4">Loading...</td></tr></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // ⚠️ REPLACE WITH YOUR DEPLOYED APP SCRIPT URL
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyLyLhDE18tyfaEFbvBcBANDOz_qe4E7gO_7qc74m7ly5vmIhMXxECCVVo2iDa-tkQ/exec';
+    
+    let token = sessionStorage.getItem('mgmt_pin');
+    if (!token) {
+        token = prompt("🔒 Enter Management Security PIN:");
+        sessionStorage.setItem('mgmt_pin', token);
+    }
+
+    function parseExcelDate(val) {
+        if (!val) return '';
+        const num = parseFloat(val);
+        if (!isNaN(num) && num > 25000) { 
+            const d = new Date((num - 25569) * 86400 * 1000);
+            d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
+            return d.toLocaleDateString(); 
+        }
+        return String(val);
+    }
+
+    async function fetchData(action) {
+        const response = await fetch(`${API_URL}?action=${action}&token=${encodeURIComponent(token)}`, { redirect: 'follow' });
+        const json = await response.json();
+        if (!json.success) throw new Error(json.error);
+        return json.data;
+    }
+
+    async function loadData() {
+        const statusEl = document.getElementById('status');
+        statusEl.innerText = "Fetching secure data...";
+        
+        try {
+            // Fetch Contracts
+            const contracts = await fetchData('getContracts');
+            document.getElementById('contractsBody').innerHTML = contracts.map(c => `
+                <tr>
+                    <td><strong>${c.contractNumber || ''}</strong></td>
+                    <td>${c.clientName || ''}</td>
+                    <td>${c.profession || ''}</td>
+                    <td>${c.nationality || ''}</td>
+                    <td><span class="badge badge-status">${c.contractStatus || 'New'}</span></td>
+                    <td>${c.amountDue || ''}</td>
+                    <td>${parseExcelDate(c.startDate)}</td>
+                    <td>${c.employeeName || ''}</td>
+                </tr>
+            `).join('');
+
+            // Fetch Logs
+            const logs = await fetchData('getProgress');
+            document.getElementById('logBody').innerHTML = logs.map(l => `
+                <tr>
+                    <td>${new Date(l.timestamp).toLocaleString()}</td>
+                    <td><strong>${l.contractNumber}</strong></td>
+                    <td>${l.oldStatus}</td>
+                    <td><span class="badge badge-status">${l.newStatus}</span></td>
+                </tr>
+            `).join('');
+
+            statusEl.innerText = `✅ Last updated: ${new Date().toLocaleTimeString()}`;
+        } catch (err) {
+            statusEl.innerHTML = `<span style="color:red;">❌ Error: ${err.message}. <button onclick="sessionStorage.removeItem('mgmt_pin'); location.reload();">Reset PIN</button></span>`;
+        }
+    }
+
+    window.onload = loadData;
+</script>
+</body>
+</html>
