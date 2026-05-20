@@ -150,6 +150,12 @@
     function cleanFormat(val) {
         if (!val) return '';
         let str = String(val).trim();
+        
+        // التحديث الجديد: إذا كانت الخلية تحتوي على مسافة تفصل بين التاريخ والوقت (مثل: 9/15/2025 13:34)، يتم أخذ التاريخ وفصل الوقت فوراً.
+        if (str.includes(' ')) {
+            str = str.split(' ')[0];
+        }
+
         // Convert Excel serial dates
         const num = parseFloat(str);
         if (!isNaN(num) && num > 25000 && num < 70000) { 
@@ -235,31 +241,38 @@
 
             if (indexMap.contractNumber === -1) throw new Error('لم يتم العثور على عمود "رقم العقد"');
 
-const toImport = [];
-for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
-    
-    // FALLBACK LOGIC: Try to get Contract Number. If it doesn't exist, use Visa Number. 
-    // If BOTH don't exist, skip the row.
-    let primaryId = '';
-    if (indexMap.contractNumber !== -1 && row[indexMap.contractNumber]) {
-        primaryId = String(row[indexMap.contractNumber]).trim();
-    } else if (indexMap.issueNumber !== -1 && row[indexMap.issueNumber]) {
-        primaryId = String(row[indexMap.issueNumber]).trim();
-    }
-    
-    if (!primaryId) continue; // Skip empty/invalid rows
+            const toImport = [];
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                
+                // FALLBACK LOGIC: Try to get Contract Number. If it doesn't exist, use Visa Number. 
+                // If BOTH don't exist, skip the row.
+                let primaryId = '';
+                if (indexMap.contractNumber !== -1 && row[indexMap.contractNumber]) {
+                    primaryId = String(row[indexMap.contractNumber]).trim();
+                } else if (indexMap.issueNumber !== -1 && row[indexMap.issueNumber]) {
+                    primaryId = String(row[indexMap.issueNumber]).trim();
+                }
+                
+                if (!primaryId) continue; // Skip empty/invalid rows
 
-    const item = {};
-    Object.keys(indexMap).forEach(key => {
-        item[key] = indexMap[key] !== -1 ? row[indexMap[key]] : '';
-    });
-    
-    // Ensure the system always has a primary ID saved in the contractNumber field for the database
-    item.contractNumber = primaryId; 
-    
-    toImport.push(item);
-}
+                const item = {};
+                Object.keys(indexMap).forEach(key => {
+                    let val = indexMap[key] !== -1 ? row[indexMap[key]] : '';
+                    
+                    // التحديث الجديد: تنظيف التواريخ فوراً وفصل الوقت عند سحبها من ملف الإكسل لمنع دخول الوقت إلى الشيت الرئيسي
+                    if (key === 'startDate' || key === 'arrivalDate') {
+                        val = cleanFormat(val);
+                    }
+                    
+                    item[key] = val;
+                });
+                
+                // Ensure the system always has a primary ID saved in the contractNumber field for the database
+                item.contractNumber = primaryId; 
+                
+                toImport.push(item);
+            }
 
             setStatus(`جاري مزامنة ${toImport.length} عقد مع السجل...`, 'info');
             const res = await apiCall('bulkImport', { contracts: toImport });
