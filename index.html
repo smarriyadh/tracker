@@ -217,54 +217,56 @@
         } catch (err) { setStatus('❌ فشل التحميل: ' + err.message, 'error'); }
     }
 
-    document.getElementById('fileInput').addEventListener('change', async (e) => {
-        if (!e.target.files.length) return;
-        const file = e.target.files[0];
-        setStatus('جاري قراءة الملف...', 'info');
-        
-        try {
-            const data = await file.arrayBuffer();
-            const workbook = XLSX.read(data, { cellDates: false });
-const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { 
-    header: 1, 
-    defval: "", 
-    raw: true 
-});            
-            if (rows.length < 2) throw new Error('الملف فارغ');
-
-            const fileHeaders = rows[0].map(h => String(h).trim().toLowerCase());
-            const indexMap = {};
-
-            Object.keys(HEADER_ALIASES).forEach(key => {
-                indexMap[key] = fileHeaders.findIndex(h => HEADER_ALIASES[key].some(alias => h.includes(alias.toLowerCase())));
-            });
-
-            if (indexMap.contractNumber === -1) throw new Error('لم يتم العثور على عمود "رقم العقد"');
-
-            const toImport = [];
-            for (let i = 1; i < rows.length; i++) {
-                const row = rows[i];
-                
-                let primaryId = '';
-                if (indexMap.contractNumber !== -1 && row[indexMap.contractNumber]) {
-                    primaryId = String(row[indexMap.contractNumber]).trim();
-                } else if (indexMap.issueNumber !== -1 && row[indexMap.issueNumber]) {
-                    primaryId = String(row[indexMap.issueNumber]).trim();
-                }
-                
-                if (!primaryId) continue;
-
-const item = {};
-Object.keys(indexMap).forEach(key => {
-    let val = indexMap[key] !== -1 ? row[indexMap[key]] : '';
+document.getElementById('fileInput').addEventListener('change', async (e) => {
+    if (!e.target.files.length) return;
+    const file = e.target.files[0];
+    setStatus('جاري معالجة الملف...', 'info');
     
-    // التواريخ فقط هي التي نطبق عليها دالة التنظيف
-    if (key === 'startDate' || key === 'arrivalDate') {
-        item[key] = cleanDateFormat(val);
-    } 
-    // المبلغ وباقي الحقول نأخذها كما هي دون تغيير
-    else {
-        item[key] = String(val).trim();
+    try {
+        const data = await file.arrayBuffer();
+        // التعديل الهام هنا: raw: true يمنع المكتبة من تحويل الأرقام لتواريخ تلقائياً
+        const workbook = XLSX.read(data, { raw: true });
+        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { 
+            header: 1, 
+            defval: "", 
+            raw: true 
+        });
+        
+        if (rows.length < 2) throw new Error('الملف فارغ');
+
+        const fileHeaders = rows[0].map(h => String(h).trim().toLowerCase());
+        const indexMap = {};
+
+        Object.keys(HEADER_ALIASES).forEach(key => {
+            indexMap[key] = fileHeaders.findIndex(h => HEADER_ALIASES[key].some(alias => h.includes(alias.toLowerCase())));
+        });
+
+        const toImport = [];
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const item = {};
+            
+            Object.keys(indexMap).forEach(key => {
+                let val = indexMap[key] !== -1 ? row[indexMap[key]] : '';
+                
+                // التواريخ فقط هي التي نعالجها برمجياً
+                if (key === 'startDate' || key === 'arrivalDate') {
+                    item[key] = cleanDateFormat(val); 
+                } 
+                // المبلغ وباقي النصوص: نأخذ القيمة الخام كما هي (سلسلة نصية)
+                else {
+                    item[key] = (val !== null && val !== undefined) ? String(val).trim() : '';
+                }
+            });
+            
+            if (item.contractNumber) toImport.push(item);
+        }
+
+        const res = await apiCall('bulkImport', { contracts: toImport });
+        setStatus(`✅ تمت العملية بنجاح: ${res.added} مضاف، ${res.skipped} مكرر`, 'success');
+        loadContracts();
+    } catch (err) {
+        setStatus('❌ خطأ في المعالجة: ' + err.message, 'error');
     }
 });
                 
