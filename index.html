@@ -94,7 +94,7 @@
         workerName: ['اسم الخادمة', 'اسم العاملة', 'worker'],
         nationality: ['الجنسية', 'الدولة'],
         profession: ['المهنة', 'مهنة'],
-        amountDue: ['المبلغ المستحق', 'السعر المعتمد', 'السعر'],
+        amountDue: ['المبلغ المستحق', 'السعر المعتمد', 'السعر', 'المبلغ'],
         duration: ['مدة الاستقدام', 'مدة العقد', 'المدة'],
         startDate: ['تاريخ بداية العقد', 'تاريخ التقديم', 'تاريخ البدء'],
         arrivalDate: ['تاريخ الوصول', 'تاريخ وصول'],
@@ -217,69 +217,69 @@
         } catch (err) { setStatus('❌ فشل التحميل: ' + err.message, 'error'); }
     }
 
-document.getElementById('fileInput').addEventListener('change', async (e) => {
-    if (!e.target.files.length) return;
-    const file = e.target.files[0];
-    setStatus('جاري معالجة الملف...', 'info');
-    
-    try {
-        const data = await file.arrayBuffer();
-        // التعديل الهام هنا: raw: true يمنع المكتبة من تحويل الأرقام لتواريخ تلقائياً
-        const workbook = XLSX.read(data, { raw: true });
-        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { 
-            header: 1, 
-            defval: "", 
-            raw: true 
-        });
+    document.getElementById('fileInput').addEventListener('change', async (e) => {
+        if (!e.target.files.length) return;
+        const file = e.target.files[0];
+        setStatus('جاري معالجة الملف...', 'info');
         
-        if (rows.length < 2) throw new Error('الملف فارغ');
-
-        const fileHeaders = rows[0].map(h => String(h).trim().toLowerCase());
-        const indexMap = {};
-
-        Object.keys(HEADER_ALIASES).forEach(key => {
-            indexMap[key] = fileHeaders.findIndex(h => HEADER_ALIASES[key].some(alias => h.includes(alias.toLowerCase())));
-        });
-
-        const toImport = [];
-        for (let i = 1; i < rows.length; i++) {
-            const row = rows[i];
-            const item = {};
-            
-            Object.keys(indexMap).forEach(key => {
-                let val = indexMap[key] !== -1 ? row[indexMap[key]] : '';
-                
-                // التواريخ فقط هي التي نعالجها برمجياً
-                if (key === 'startDate' || key === 'arrivalDate') {
-                    item[key] = cleanDateFormat(val); 
-                } 
-                // المبلغ وباقي النصوص: نأخذ القيمة الخام كما هي (سلسلة نصية)
-                else {
-                    item[key] = (val !== null && val !== undefined) ? String(val).trim() : '';
-                }
+        try {
+            const data = await file.arrayBuffer();
+            // التعديل الهام: raw: true يمنع المكتبة من تحويل المبالغ لتواريخ بشكل تلقائي غريب
+            const workbook = XLSX.read(data, { raw: true });
+            const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { 
+                header: 1, 
+                defval: "", 
+                raw: true 
             });
             
-            if (item.contractNumber) toImport.push(item);
-        }
+            if (rows.length < 2) throw new Error('الملف فارغ');
 
-        const res = await apiCall('bulkImport', { contracts: toImport });
-        setStatus(`✅ تمت العملية بنجاح: ${res.added} مضاف، ${res.skipped} مكرر`, 'success');
-        loadContracts();
-    } catch (err) {
-        setStatus('❌ خطأ في المعالجة: ' + err.message, 'error');
-    }
-});
+            const fileHeaders = rows[0].map(h => String(h).trim().toLowerCase());
+            const indexMap = {};
+
+            Object.keys(HEADER_ALIASES).forEach(key => {
+                indexMap[key] = fileHeaders.findIndex(h => HEADER_ALIASES[key].some(alias => h.includes(alias.toLowerCase())));
+            });
+
+            const toImport = [];
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row || row.length === 0) continue;
+
+                // التحقق الذكي من المعرّف الأساسي (رقم العقد أو رقم التأشيرة كبديل)
+                let primaryId = '';
+                if (indexMap.contractNumber !== -1 && row[indexMap.contractNumber]) {
+                    primaryId = String(row[indexMap.contractNumber]).trim();
+                } else if (indexMap.issueNumber !== -1 && row[indexMap.issueNumber]) {
+                    primaryId = String(row[indexMap.issueNumber]).trim();
+                }
                 
-                item.contractNumber = primaryId; 
+                if (!primaryId) continue;
+
+                const item = {};
+                Object.keys(indexMap).forEach(key => {
+                    let val = indexMap[key] !== -1 ? row[indexMap[key]] : '';
+                    
+                    // التمييز: معالجة التواريخ كتواريخ فقط، والنصوص والمبالغ كقيم خام كاملة
+                    if (key === 'startDate' || key === 'arrivalDate') {
+                        item[key] = cleanDateFormat(val); 
+                    } else {
+                        item[key] = (val !== null && val !== undefined) ? String(val).trim() : '';
+                    }
+                });
+                
+                item.contractNumber = primaryId;
                 toImport.push(item);
             }
 
+            if (toImport.length === 0) throw new Error('لم يتم العثور على أسطر صالحة للاستيراد');
+
             setStatus(`جاري مزامنة ${toImport.length} عقد مع السجل...`, 'info');
             const res = await apiCall('bulkImport', { contracts: toImport });
-            setStatus(`✅ اكتمل الرفع: تمت إضافة ${res.added}، وتخطي ${res.skipped} مكرر`, 'success');
-            loadContracts(); 
+            setStatus(`✅ اكتمل الرفع بنجاح: تمت إضافة ${res.added}، وتخطي ${res.skipped} مكرر`, 'success');
+            loadContracts();
         } catch (err) {
-            setStatus('❌ فشل الرفع: ' + err.message, 'error');
+            setStatus('❌ فشل في معالجة أو رفع الملف: ' + err.message, 'error');
         }
         e.target.value = '';
     });
