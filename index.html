@@ -35,6 +35,7 @@
         .info { background: #e0f2fe; color: #075985; display: block; }
         
         .amount-cell { font-weight: bold; color: #059669; direction: ltr; text-align: right;}
+        .missing-data { color: #94a3b8; font-style: italic; }
     </style>
 </head>
 <body>
@@ -87,18 +88,18 @@
     
     let STAFF_PIN = sessionStorage.getItem('staff_pin');
 
-    // تم إضافة "السعر المعتد" لحل مشكلة الإملاء في ملف الإكسل
+    // تـم تـحـسـيـن مـصـفـوفـات الـبـحـث لـتـشـمـل جـمـيـع اخـتـلافات الـكـتـابـة والإنـبـات الإمـلائـي
     const HEADER_ALIASES = {
-        contractNumber: ['رقم العقد', 'رقم_العقد', 'contract no'],
-        issueNumber: ['رقم الصادر', 'رقم التاشيرة', 'رقم التأشيرة', 'visa'],
+        contractNumber: ['رقم العقد', 'رقم_العقد', 'contract no', 'رقم عقد'],
+        issueNumber: ['رقم الصادر', 'رقم التاشيرة', 'رقم التأشيرة', 'رقم تاشيرة', 'رقم تأشيرة', 'visa'],
         employerId: ['هوية صاحب العمل', 'رقم الهوية', 'هوية العميل'],
-        clientName: ['اسم العميل', 'العميل'],
-        workerName: ['اسم الخادمة', 'اسم العاملة', 'worker'],
-        nationality: ['الجنسية', 'الدولة'],
-        profession: ['المهنة', 'مهنة'],
+        clientName: ['اسم العميل', 'العميل', 'إسم العميل'],
+        workerName: ['اسم الخادمة', 'اسم العاملة', 'اسم العامله', 'إسم العاملة', 'إسم العامله', 'worker', 'العاملة', 'العامله'],
+        nationality: ['الجنسية', 'الدولة', 'جنسية'],
+        profession: ['المهنة', 'مهنة', 'المهنه'],
         amountDue: ['المبلغ المستحق', 'السعر المعتمد', 'السعر المعتد', 'السعر', 'المبلغ', 'amount'],
         duration: ['مدة الاستقدام', 'مدة العقد', 'المدة'],
-        startDate: ['تاريخ بداية العقد', 'تاريخ التقديم', 'تاريخ البدء'],
+        startDate: ['تاريخ بداية العقد', 'تاريخ التقديم', 'تاريخ البدء', 'تاريخ البداية'],
         arrivalDate: ['تاريخ الوصول', 'تاريخ وصول'],
         contractStatus: ['حالة العقد', 'حالة_العقد', 'الحالة']
     };
@@ -146,16 +147,13 @@
         return json.data;
     }
 
-    // دالة جديدة لتصحيح وتنسيق المبالغ المالية مع إنقاذ التواريخ التالفة
     function formatAmount(val) {
         if (val === null || val === undefined || val === '') return '';
         let str = String(val).trim();
         
-        // إنقاذ المبالغ التي تحولت لتواريخ (مثل 4501-09-30T...)
         if (str.includes('T') && str.length > 15) {
             let match = str.match(/^(\d{4})/); 
             if (match) {
-                // يعيد استخراج السنة التي تمثل المبلغ الأساسي مع إضافة الكسر
                 let recovered = parseFloat(match[1]);
                 return recovered.toLocaleString('en-US') + (match[1] === '4501' ? '.40' : '');
             }
@@ -210,6 +208,10 @@
                 let opts = SYSTEM_STATUSES.map(s => `<option value="${s}" ${currentStatus === s ? 'selected' : ''}>${s}</option>`).join('');
                 if (!SYSTEM_STATUSES.includes(currentStatus)) opts += `<option value="${currentStatus}" selected>${currentStatus}</option>`;
 
+                // معالجة عرض اسم العاملة في حال عدم توفره لتجنب الخلايا الفارغة تماما
+                const cleanWorkerName = cleanGeneralFormat(c.workerName);
+                const workerDisplay = cleanWorkerName ? cleanWorkerName : '<span class="missing-data">— لا يوجد اسم —</span>';
+
                 return `
                 <tr>
                     <td><button class="btn-save" data-id="${c.contractNumber}">حفظ</button></td>
@@ -217,7 +219,7 @@
                     <td><strong>${cleanGeneralFormat(c.contractNumber)}</strong></td>
                     <td>${cleanGeneralFormat(c.issueNumber)}</td>
                     <td>${cleanGeneralFormat(c.clientName)}</td>
-                    <td>${cleanGeneralFormat(c.workerName)}</td>
+                    <td>${workerDisplay}</td>
                     <td>${cleanGeneralFormat(c.nationality)}</td>
                     <td>${cleanGeneralFormat(c.profession)}</td>
                     <td class="amount-cell">${formatAmount(c.amountDue)}</td>
@@ -249,7 +251,6 @@
             const data = await file.arrayBuffer();
             const workbook = XLSX.read(data, { type: 'array' }); 
             
-            // تم تغيير raw إلى false لجلب النص كما هو معروض في الإكسل بالظبط ومنع أخطاء قراءة المبالغ
             const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { 
                 header: 1, 
                 defval: "", 
@@ -286,7 +287,6 @@
                     if (key === 'startDate' || key === 'arrivalDate') {
                         item[key] = cleanDateFormat(val); 
                     } else if (key === 'amountDue') {
-                        // إرسال الرقم نظيفاً كنص لمنع تحويله لتاريخ في قاعدة البيانات
                         let cleanNum = String(val).replace(/[^\d.-]/g, '');
                         item[key] = cleanNum ? cleanNum : String(val).trim();
                     } else {
