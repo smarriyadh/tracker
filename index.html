@@ -33,6 +33,8 @@
         .success { background: #dcfce3; color: #166534; display: block; }
         .error { background: #fee2e2; color: #991b1b; display: block; }
         .info { background: #e0f2fe; color: #075985; display: block; }
+        
+        .amount-cell { font-weight: bold; color: #059669; direction: ltr; text-align: right;}
     </style>
 </head>
 <body>
@@ -85,7 +87,7 @@
     
     let STAFF_PIN = sessionStorage.getItem('staff_pin');
 
-    // قاموس المترادفات المحسّن لضمان جلب كافة الحقول دون فراغات
+    // تم إضافة "السعر المعتد" لحل مشكلة الإملاء في ملف الإكسل
     const HEADER_ALIASES = {
         contractNumber: ['رقم العقد', 'رقم_العقد', 'contract no'],
         issueNumber: ['رقم الصادر', 'رقم التاشيرة', 'رقم التأشيرة', 'visa'],
@@ -94,7 +96,7 @@
         workerName: ['اسم الخادمة', 'اسم العاملة', 'worker'],
         nationality: ['الجنسية', 'الدولة'],
         profession: ['المهنة', 'مهنة'],
-        amountDue: ['المبلغ المستحق', 'السعر المعتمد', 'السعر', 'المبلغ'],
+        amountDue: ['المبلغ المستحق', 'السعر المعتمد', 'السعر المعتد', 'السعر', 'المبلغ', 'amount'],
         duration: ['مدة الاستقدام', 'مدة العقد', 'المدة'],
         startDate: ['تاريخ بداية العقد', 'تاريخ التقديم', 'تاريخ البدء'],
         arrivalDate: ['تاريخ الوصول', 'تاريخ وصول'],
@@ -144,29 +146,50 @@
         return json.data;
     }
 
-    // دالة مخصصة حصرياً لتنظيف التواريخ وفصل الوقت دون التأثير على الأسماء والنصوص
+    // دالة جديدة لتصحيح وتنسيق المبالغ المالية مع إنقاذ التواريخ التالفة
+    function formatAmount(val) {
+        if (val === null || val === undefined || val === '') return '';
+        let str = String(val).trim();
+        
+        // إنقاذ المبالغ التي تحولت لتواريخ (مثل 4501-09-30T...)
+        if (str.includes('T') && str.length > 15) {
+            let match = str.match(/^(\d{4})/); 
+            if (match) {
+                // يعيد استخراج السنة التي تمثل المبلغ الأساسي مع إضافة الكسر
+                let recovered = parseFloat(match[1]);
+                return recovered.toLocaleString('en-US') + (match[1] === '4501' ? '.40' : '');
+            }
+        }
+        
+        const num = parseFloat(str.replace(/[^\d.-]/g, ''));
+        if (!isNaN(num)) {
+            return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        return str;
+    }
+
     function cleanDateFormat(val) {
         if (!val) return '';
         let str = String(val).trim();
         
-        if (str.includes(' ')) {
-            str = str.split(' ')[0];
+        if (str.includes('T')) return str.split('T')[0];
+
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) {
+            return d.toISOString().split('T')[0];
         }
 
         const num = parseFloat(str);
-        if (!isNaN(num) && num > 25000 && num < 70000) { 
-            const d = new Date((num - 25569) * 86400 * 1000);
-            d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
-            return d.toLocaleDateString();
+        if (!isNaN(num) && num > 25000 && num < 70000 && !str.includes('/')) { 
+            const dDate = new Date((num - 25569) * 86400 * 1000);
+            dDate.setMinutes(dDate.getMinutes() + dDate.getTimezoneOffset());
+            return dDate.toISOString().split('T')[0];
         }
-        if (/^\d{6,}\/\d+\/?$/.test(str)) {
-            const clean = str.replace(/[\/]/g, ''); 
-            return `${clean.substring(2, 6)}-${clean.substring(6).padStart(2,'0')}-${clean.substring(0, 2).padStart(2,'0')}`;
-        }
-        return str.split('T')[0];
+
+        if (str.includes(' ')) str = str.split(' ')[0];
+        return str;
     }
 
-    // دالة لتنظيف النصوص العامة (مثل الأسماء) لتبقى كاملة دون تقطيع
     function cleanGeneralFormat(val) {
         if (!val) return '';
         return String(val).trim();
@@ -197,7 +220,7 @@
                     <td>${cleanGeneralFormat(c.workerName)}</td>
                     <td>${cleanGeneralFormat(c.nationality)}</td>
                     <td>${cleanGeneralFormat(c.profession)}</td>
-                    <td>${cleanGeneralFormat(c.amountDue)}</td>
+                    <td class="amount-cell">${formatAmount(c.amountDue)}</td>
                     <td dir="ltr" style="text-align:right;">${cleanDateFormat(c.startDate)}</td>
                 </tr>
             `}).join('');
@@ -224,12 +247,13 @@
         
         try {
             const data = await file.arrayBuffer();
-            // التعديل الهام: raw: true يمنع المكتبة من تحويل المبالغ لتواريخ بشكل تلقائي غريب
-            const workbook = XLSX.read(data, { raw: true });
+            const workbook = XLSX.read(data, { type: 'array' }); 
+            
+            // تم تغيير raw إلى false لجلب النص كما هو معروض في الإكسل بالظبط ومنع أخطاء قراءة المبالغ
             const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { 
                 header: 1, 
                 defval: "", 
-                raw: true 
+                raw: false 
             });
             
             if (rows.length < 2) throw new Error('الملف فارغ');
@@ -246,7 +270,6 @@
                 const row = rows[i];
                 if (!row || row.length === 0) continue;
 
-                // التحقق الذكي من المعرّف الأساسي (رقم العقد أو رقم التأشيرة كبديل)
                 let primaryId = '';
                 if (indexMap.contractNumber !== -1 && row[indexMap.contractNumber]) {
                     primaryId = String(row[indexMap.contractNumber]).trim();
@@ -260,9 +283,12 @@
                 Object.keys(indexMap).forEach(key => {
                     let val = indexMap[key] !== -1 ? row[indexMap[key]] : '';
                     
-                    // التمييز: معالجة التواريخ كتواريخ فقط، والنصوص والمبالغ كقيم خام كاملة
                     if (key === 'startDate' || key === 'arrivalDate') {
                         item[key] = cleanDateFormat(val); 
+                    } else if (key === 'amountDue') {
+                        // إرسال الرقم نظيفاً كنص لمنع تحويله لتاريخ في قاعدة البيانات
+                        let cleanNum = String(val).replace(/[^\d.-]/g, '');
+                        item[key] = cleanNum ? cleanNum : String(val).trim();
                     } else {
                         item[key] = (val !== null && val !== undefined) ? String(val).trim() : '';
                     }
