@@ -225,8 +225,11 @@
         try {
             const data = await file.arrayBuffer();
             const workbook = XLSX.read(data, { cellDates: false });
-            const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: "", raw: false });
-            
+const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { 
+    header: 1, 
+    defval: "", 
+    raw: true 
+});            
             if (rows.length < 2) throw new Error('الملف فارغ');
 
             const fileHeaders = rows[0].map(h => String(h).trim().toLowerCase());
@@ -251,17 +254,19 @@
                 
                 if (!primaryId) continue;
 
-                const item = {};
-                Object.keys(indexMap).forEach(key => {
-                    let val = indexMap[key] !== -1 ? row[indexMap[key]] : '';
-                    
-                    // التمييز الذكي: تنظيف التاريخ فقط كتواريخ، والنصوص الأخرى كنصوص كاملة
-                    if (key === 'startDate' || key === 'arrivalDate') {
-                        item[key] = cleanDateFormat(val);
-                    } else {
-                        item[key] = cleanGeneralFormat(val);
-                    }
-                });
+const item = {};
+Object.keys(indexMap).forEach(key => {
+    let val = indexMap[key] !== -1 ? row[indexMap[key]] : '';
+    
+    // التواريخ فقط هي التي نطبق عليها دالة التنظيف
+    if (key === 'startDate' || key === 'arrivalDate') {
+        item[key] = cleanDateFormat(val);
+    } 
+    // المبلغ وباقي الحقول نأخذها كما هي دون تغيير
+    else {
+        item[key] = String(val).trim();
+    }
+});
                 
                 item.contractNumber = primaryId; 
                 toImport.push(item);
