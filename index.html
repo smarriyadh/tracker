@@ -235,17 +235,31 @@
 
             if (indexMap.contractNumber === -1) throw new Error('لم يتم العثور على عمود "رقم العقد"');
 
-            const toImport = [];
-            for (let i = 1; i < rows.length; i++) {
-                const row = rows[i];
-                if (!row[indexMap.contractNumber]) continue;
+const toImport = [];
+for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    
+    // FALLBACK LOGIC: Try to get Contract Number. If it doesn't exist, use Visa Number. 
+    // If BOTH don't exist, skip the row.
+    let primaryId = '';
+    if (indexMap.contractNumber !== -1 && row[indexMap.contractNumber]) {
+        primaryId = String(row[indexMap.contractNumber]).trim();
+    } else if (indexMap.issueNumber !== -1 && row[indexMap.issueNumber]) {
+        primaryId = String(row[indexMap.issueNumber]).trim();
+    }
+    
+    if (!primaryId) continue; // Skip empty/invalid rows
 
-                const item = {};
-                Object.keys(indexMap).forEach(key => {
-                    item[key] = indexMap[key] !== -1 ? row[indexMap[key]] : '';
-                });
-                toImport.push(item);
-            }
+    const item = {};
+    Object.keys(indexMap).forEach(key => {
+        item[key] = indexMap[key] !== -1 ? row[indexMap[key]] : '';
+    });
+    
+    // Ensure the system always has a primary ID saved in the contractNumber field for the database
+    item.contractNumber = primaryId; 
+    
+    toImport.push(item);
+}
 
             setStatus(`جاري مزامنة ${toImport.length} عقد مع السجل...`, 'info');
             const res = await apiCall('bulkImport', { contracts: toImport });
