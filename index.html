@@ -87,8 +87,7 @@
 
 <script>
     // Make sure this is the URL from your NEW deployment
-    const API_URL = 'https://script.google.com/macros/s/AKfycbw_aR1ME988YiP6eyFanow6Baq51feeLLBz60jvfUqYUD3Kd3-0mzlycwsIIRQP2lo/exec
-';
+    const API_URL = 'https://script.google.com/macros/s/AKfycby53L86hdxulgnksxeoxeSZLB_GB7_mL_rjd8UsWEsjj2nBr0jDRVl3GMqTpGfvDD4/exec';
     
     let STAFF_PIN = sessionStorage.getItem('staff_pin');
 
@@ -112,16 +111,13 @@
 
     if (STAFF_PIN) { showApp(); loadContracts(); }
 
-<script>
-  function login() {
-    console.log("Login button clicked!");
-    STAFF_PIN = document.getElementById('pinInput').value;
-    sessionStorage.setItem('staff_pin', STAFF_PIN);
+    function login() {
+        STAFF_PIN = document.getElementById('pinInput').value;
+        sessionStorage.setItem('staff_pin', STAFF_PIN);
         showApp();
         loadContracts();
     }
-</script>
-    
+
     function showApp() {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
