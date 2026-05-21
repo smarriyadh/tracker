@@ -112,13 +112,16 @@
 
     if (STAFF_PIN) { showApp(); loadContracts(); }
 
-    function login() {
-        STAFF_PIN = document.getElementById('pinInput').value;
-        sessionStorage.setItem('staff_pin', STAFF_PIN);
+<script>
+  function login() {
+    console.log("Login button clicked!");
+    STAFF_PIN = document.getElementById('pinInput').value;
+    sessionStorage.setItem('staff_pin', STAFF_PIN);
         showApp();
         loadContracts();
     }
-
+</script>
+    
     function showApp() {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
