@@ -9,7 +9,6 @@
         body { font-family: Tahoma, Arial, sans-serif; background: #f0f4f8; margin: 0; padding: 20px; color: #1e293b; }
         .container { max-width: 98vw; margin: auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: none; }
         
-        /* Login Screen */
         #loginScreen { max-width: 400px; margin: 100px auto; background: white; padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         #loginScreen input { width: 90%; padding: 12px; margin: 15px 0; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; font-size: 16px; }
         #loginScreen button { width: 100%; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
@@ -46,7 +45,6 @@
     <p style="color:#64748b; font-size: 14px;">الرجاء إدخال كلمة المرور للوصول إلى السجل.</p>
     <input type="password" id="pinInput" placeholder="كلمة المرور...">
     <button onclick="login()">دخول</button>
-    <div id="loginError" style="color:red; margin-top:10px; font-size:14px; display:none;">كلمة المرور خاطئة</div>
 </div>
 
 <div class="container" id="mainApp">
@@ -69,53 +67,45 @@
                     <th>الحالة</th>
                     <th>رقم العقد</th>
                     <th>رقم التأشيرة</th>
-                    <th>رقم الهوية</th>
-                    <th>رقم العميل</th>
+                    <th>هوية العميل</th>
                     <th>اسم العميل</th>
                     <th>اسم العاملة</th>
                     <th>الجنسية</th>
                     <th>المهنة</th>
-                    <th>الشهر</th>
                     <th>تاريخ البدء</th>
                     <th>تاريخ الوصول</th>
                     <th>المدة</th>
-                    <th>النوع</th>
-                    <th>الوكيل</th>
-                    <th>الكاتب</th>
                     <th>المبلغ المستحق</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
-                <tr><td colspan="18" style="text-align:center;">جاري تحميل البيانات...</td></tr>
+                <tr><td colspan="13" style="text-align:center;">جاري تحميل البيانات...</td></tr>
             </tbody>
         </table>
     </div>
 </div>
 
 <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycby53L86hdxulgnksxeoxeSZLB_GB7_mL_rjd8UsWEsjj2nBr0jDRVl3GMqTpGfvDD4/exec';
+    // Make sure this is the URL from your NEW deployment
+    const API_URL = 'https://script.google.com/macros/s/AKfycbw_aR1ME988YiP6eyFanow6Baq51feeLLBz60jvfUqYUD3Kd3-0mzlycwsIIRQP2lo/exec
+';
     
     let STAFF_PIN = sessionStorage.getItem('staff_pin');
 
-    // Strict Dictionary combining aliases with Explicit Type Definitions to prevent Price/Date cross-decoding
+    // Stripped down strictly to the 12 target columns defined in your backend
     const HEADER_CONFIG = {
         contractNumber: { type: 'string', aliases: ['رقم العقد', 'رقم_العقد', 'contract no', 'رقم عقد'] },
         issueNumber: { type: 'string', aliases: ['رقم الصادر', 'رقم التاشيرة', 'رقم التأشيرة', 'رقم تاشيرة', 'رقم تأشيرة', 'visa'] },
         employerId: { type: 'string', aliases: ['هوية صاحب العمل', 'رقم الهوية', 'هوية العميل', 'id'] },
-        clientId: { type: 'string', aliases: ['رقم العميل', 'client no.'] },
         clientName: { type: 'string', aliases: ['اسم العميل', 'العميل', 'إسم العميل', 'client name'] },
-        workerName: { type: 'string', aliases: ['اسم الخادمة', 'اسم العاملة', 'اسم العامله', 'إسم العاملة', 'إسم العامله', 'worker', 'العاملة', 'العامله', 'اسم العامل', 'إسم العامل', 'الاسم', 'الإسم', 'name', 'labor name'] },
+        workerName: { type: 'string', aliases: ['اسم الخادمة', 'اسم العاملة', 'اسم العامله', 'worker', 'العاملة', 'العامله', 'اسم العامل', 'الاسم', 'name'] },
         nationality: { type: 'string', aliases: ['الجنسية', 'الدولة', 'جنسية', 'country'] },
         profession: { type: 'string', aliases: ['المهنة', 'مهنة', 'المهنه', 'job'] },
-        amountDue: { type: 'number', aliases: ['المبلغ المستحق', 'السعر المعتمد', 'السعر المعتد', 'السعر', 'المبلغ', 'amount', 'price'] },
-        startDate: { type: 'date', aliases: ['تاريخ بداية العقد', 'تاريخ التقديم', 'تاريخ البدء', 'تاريخ البداية', 'start date'] },
+        amountDue: { type: 'number', aliases: ['المبلغ المستحق', 'السعر المعتمد', 'السعر', 'المبلغ', 'amount', 'price'] },
+        startDate: { type: 'date', aliases: ['تاريخ بداية العقد', 'تاريخ التقديم', 'تاريخ البدء', 'start date'] },
         arrivalDate: { type: 'date', aliases: ['تاريخ الوصول', 'تاريخ وصول', 'arrival date'] },
         duration: { type: 'string', aliases: ['مدة الاستقدام', 'مدة العقد', 'المدة', 'due'] },
-        contractStatus: { type: 'string', aliases: ['حالة العقد', 'حالة_العقد', 'الحالة', 'status'] },
-        month: { type: 'string', aliases: ['الشهر', 'month'] },
-        contractType: { type: 'string', aliases: ['النوع', 'type'] },
-        agency: { type: 'string', aliases: ['الوكيل', 'agency'] },
-        encoder: { type: 'string', aliases: ['كاتب العقد', 'كاتب', 'encoder'] }
+        contractStatus: { type: 'string', aliases: ['حالة العقد', 'الحالة', 'status'] }
     };
 
     const SYSTEM_STATUSES = ['جديد', 'قيد المعالجة', 'تم الاصدار', 'تم الوصول', 'بدء العقد', 'مكتمل', 'ملغي'];
@@ -141,19 +131,23 @@
         if (type !== 'error') setTimeout(() => el.className = 'status-msg', 5000);
     }
 
+    // FIXED API CALL: It now forces a POST request EVEN IF there is no payload, destroying the cache.
     async function apiCall(action, payload = null) {
-        const cacheBuster = new Date().getTime();
-        const url = `${API_URL}?action=${action}&token=${encodeURIComponent(STAFF_PIN)}&_cb=${cacheBuster}`;
+        const url = `${API_URL}?action=${action}&token=${encodeURIComponent(STAFF_PIN)}`;
         
-        const options = { redirect: 'follow', cache: 'no-store' };
-        if (payload) {
-            options.method = 'POST';
-            options.headers = { 'Content-Type': 'text/plain;charset=utf-8' };
-            options.body = JSON.stringify(payload);
-        }
+        const options = { 
+            method: 'POST',
+            redirect: 'follow', 
+            cache: 'no-store',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        };
+        
+        // Always supply a payload to enforce POST execution
+        options.body = JSON.stringify(payload ? payload : { fetchFresh: true });
         
         const response = await fetch(url, options);
         const json = await response.json();
+        
         if (!json.success) {
             if (json.error.includes("غير مصرح")) {
                 sessionStorage.removeItem('staff_pin');
@@ -165,41 +159,30 @@
     }
 
     // --- Strict Data Handling Engine ---
-    
-    // 1. Used strictly when reading from Excel to enforce target Types
     function parseExcelCell(value, type) {
         if (value === null || value === undefined || value === "") return "";
-
         if (type === 'number') {
-            // Strictly numeric execution. Ignores string-encoded dates.
             let num = parseFloat(value);
             if (!isNaN(num)) return num;
-            
             let strVal = String(value).replace(/[^\d.-]/g, '');
             num = parseFloat(strVal);
             return isNaN(num) ? 0 : num;
         }
-
         if (type === 'date') {
             if (typeof value === 'number') {
-                // Recover Excel serial date number
                 const dDate = new Date(Math.round((value - 25569) * 86400 * 1000));
                 dDate.setMinutes(dDate.getMinutes() + dDate.getTimezoneOffset());
                 return dDate.toISOString().split('T')[0];
             }
-            
             let strVal = String(value).trim();
             if (strVal.includes('T')) return strVal.split('T')[0];
-            
             const d = new Date(strVal);
             if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
             return strVal;
         }
-
         return String(value).trim();
     }
 
-    // 2. Used strictly for displaying strings from backend onto UI safely
     function cleanString(val) {
         if (val === null || val === undefined) return '';
         return String(val).trim();
@@ -208,20 +191,15 @@
     function formatAmountDisplay(val) {
         if (val === null || val === undefined || val === '') return '';
         let str = String(val).trim();
-        
-        // Correct historical database errors where Price was saved as Date string
         if (str.includes('T') && str.includes('-') && str.length > 15) {
             let match = str.match(/^(\d{4})/); 
             if (match) {
-                // Common known fixes based on provided dataset instances
                 if (str.startsWith('4501-')) return '4,501.40';
                 if (str.startsWith('14000-')) return '14,000.30';
-                
                 let recovered = parseFloat(match[1]);
                 return recovered.toLocaleString('en-US', { minimumFractionDigits: 2 });
             }
         }
-        
         const num = parseFloat(str.replace(/[^\d.-]/g, ''));
         if (!isNaN(num)) return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         return str;
@@ -230,23 +208,17 @@
     function formatDateDisplay(val) {
         if (!val) return '';
         let str = String(val).trim();
-        
         if (str.includes('T')) return str.split('T')[0];
-        
         const num = parseFloat(str);
         if (!isNaN(num) && num > 30000 && num < 60000 && !str.includes('/')) { 
             const dDate = new Date((num - 25569) * 86400 * 1000);
             return dDate.toISOString().split('T')[0];
         }
-
         const d = new Date(str);
         if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
-
         if (str.includes(' ')) return str.split(' ')[0];
         return str;
     }
-
-    // --- End Engine ---
 
     async function loadContracts() {
         setStatus('جاري جلب البيانات...', 'info');
@@ -255,7 +227,7 @@
             const tbody = document.getElementById('tableBody');
             
             if (!contracts || contracts.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="18" style="text-align:center; font-weight:bold; padding: 20px;">لا توجد بيانات حالياً (السجل فارغ)</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="13" style="text-align:center; font-weight:bold; padding: 20px;">لا توجد بيانات حالياً (السجل فارغ)</td></tr>';
                 setStatus('السجل فارغ.', 'info');
                 return;
             }
@@ -268,6 +240,7 @@
                 const cleanWorker = cleanString(c.workerName);
                 const workerDisplay = cleanWorker ? cleanWorker : '<span class="missing-data">— لا يوجد —</span>';
 
+                // Displaying the exact 12 columns requested
                 return `
                 <tr>
                     <td><button class="btn-save" data-id="${c.contractNumber}">حفظ</button></td>
@@ -275,18 +248,13 @@
                     <td><strong>${cleanString(c.contractNumber)}</strong></td>
                     <td>${cleanString(c.issueNumber)}</td>
                     <td>${cleanString(c.employerId)}</td>
-                    <td>${cleanString(c.clientId)}</td>
                     <td>${cleanString(c.clientName)}</td>
                     <td>${workerDisplay}</td>
                     <td>${cleanString(c.nationality)}</td>
                     <td>${cleanString(c.profession)}</td>
-                    <td>${cleanString(c.month)}</td>
                     <td class="date-cell">${formatDateDisplay(c.startDate)}</td>
                     <td class="date-cell">${formatDateDisplay(c.arrivalDate)}</td>
                     <td>${cleanString(c.duration)}</td>
-                    <td>${cleanString(c.contractType)}</td>
-                    <td>${cleanString(c.agency)}</td>
-                    <td>${cleanString(c.encoder)}</td>
                     <td class="amount-cell">${formatAmountDisplay(c.amountDue)}</td>
                 </tr>
             `}).join('');
@@ -314,8 +282,6 @@
         try {
             const data = await file.arrayBuffer();
             const workbook = XLSX.read(data, { type: 'array' }); 
-            
-            // CRITICAL FIX: raw: true prevents auto-formatting strings, giving us pure floats/serial numbers so types are isolated
             const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { 
                 header: 1, 
                 defval: "", 
@@ -346,7 +312,6 @@
                 if (!primaryId) continue;
 
                 const item = {};
-                // Force Type Evaluation dynamically
                 Object.keys(indexMap).forEach(key => {
                     let rawVal = indexMap[key] !== -1 ? row[indexMap[key]] : '';
                     item[key] = parseExcelCell(rawVal, HEADER_CONFIG[key].type);
