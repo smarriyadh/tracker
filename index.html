@@ -88,13 +88,13 @@
     
     let STAFF_PIN = sessionStorage.getItem('staff_pin');
 
-    // تـم تـحـسـيـن مـصـفـوفـات الـبـحـث لـتـشـمـل جـمـيـع اخـتـلافات الـكـتـابـة والإنـبـات الإمـلائـي
+    // تمت إضافة المزيد من المسميات المحتملة مثل "الاسم" و "اسم العامل"
     const HEADER_ALIASES = {
         contractNumber: ['رقم العقد', 'رقم_العقد', 'contract no', 'رقم عقد'],
         issueNumber: ['رقم الصادر', 'رقم التاشيرة', 'رقم التأشيرة', 'رقم تاشيرة', 'رقم تأشيرة', 'visa'],
         employerId: ['هوية صاحب العمل', 'رقم الهوية', 'هوية العميل'],
         clientName: ['اسم العميل', 'العميل', 'إسم العميل'],
-        workerName: ['اسم الخادمة', 'اسم العاملة', 'اسم العامله', 'إسم العاملة', 'إسم العامله', 'worker', 'العاملة', 'العامله'],
+        workerName: ['اسم الخادمة', 'اسم العاملة', 'اسم العامله', 'إسم العاملة', 'إسم العامله', 'worker', 'العاملة', 'العامله', 'اسم العامل', 'إسم العامل', 'الاسم', 'الإسم', 'name'],
         nationality: ['الجنسية', 'الدولة', 'جنسية'],
         profession: ['المهنة', 'مهنة', 'المهنه'],
         amountDue: ['المبلغ المستحق', 'السعر المعتمد', 'السعر المعتد', 'السعر', 'المبلغ', 'amount'],
@@ -128,13 +128,17 @@
     }
 
     async function apiCall(action, payload = null) {
-        const url = `${API_URL}?action=${action}&token=${encodeURIComponent(STAFF_PIN)}`;
-        const options = { redirect: 'follow' };
+        // [FIX 1] إضافة Cache-Buster لمنع المتصفح من تخزين البيانات المحذوفة وإجباره على جلب بيانات جوجل شيت الحقيقية
+        const cacheBuster = new Date().getTime();
+        const url = `${API_URL}?action=${action}&token=${encodeURIComponent(STAFF_PIN)}&_cb=${cacheBuster}`;
+        
+        const options = { redirect: 'follow', cache: 'no-store' };
         if (payload) {
             options.method = 'POST';
             options.headers = { 'Content-Type': 'text/plain;charset=utf-8' };
             options.body = JSON.stringify(payload);
         }
+        
         const response = await fetch(url, options);
         const json = await response.json();
         if (!json.success) {
@@ -198,8 +202,11 @@
         try {
             const contracts = await apiCall('getContracts');
             const tbody = document.getElementById('tableBody');
-            if (!contracts.length) {
-                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">لا توجد بيانات حالياً</td></tr>';
+            
+            // تحقق صارم في حال كانت المصفوفة فارغة تماماً
+            if (!contracts || contracts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; font-weight:bold; padding: 20px;">لا توجد بيانات حالياً (السجل فارغ)</td></tr>';
+                setStatus('السجل فارغ.', 'info');
                 return;
             }
             
@@ -208,7 +215,6 @@
                 let opts = SYSTEM_STATUSES.map(s => `<option value="${s}" ${currentStatus === s ? 'selected' : ''}>${s}</option>`).join('');
                 if (!SYSTEM_STATUSES.includes(currentStatus)) opts += `<option value="${currentStatus}" selected>${currentStatus}</option>`;
 
-                // معالجة عرض اسم العاملة في حال عدم توفره لتجنب الخلايا الفارغة تماما
                 const cleanWorkerName = cleanGeneralFormat(c.workerName);
                 const workerDisplay = cleanWorkerName ? cleanWorkerName : '<span class="missing-data">— لا يوجد اسم —</span>';
 
@@ -259,7 +265,8 @@
             
             if (rows.length < 2) throw new Error('الملف فارغ');
 
-            const fileHeaders = rows[0].map(h => String(h).trim().toLowerCase());
+            // [FIX 2] مسح الفواصل والأسطر المخفية من عناوين الإكسل قبل مطابقتها
+            const fileHeaders = rows[0].map(h => String(h).replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase());
             const indexMap = {};
 
             Object.keys(HEADER_ALIASES).forEach(key => {
@@ -307,7 +314,7 @@
         } catch (err) {
             setStatus('❌ فشل في معالجة أو رفع الملف: ' + err.message, 'error');
         }
-        e.target.value = '';
+        e.target.value = ''; // إعادة تعيين الحقل ليقبل رفع نفس الملف مجددا
     });
 </script>
 </body>
