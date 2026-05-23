@@ -3,164 +3,314 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بوابة الموظفين - إدارة العقود الشاملة</title>
+    <title>نظام إدارة العقود - البحث والتعديل</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <style>
-        body { font-family: Tahoma, Arial, sans-serif; background: #f0f4f8; margin: 0; padding: 20px; color: #1e293b; }
-        .container { max-width: 98vw; margin: auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: none; }
+        * { box-sizing: border-box; }
+        body { 
+            font-family: Tahoma, 'Segoe UI', Arial, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0; padding: 20px; color: #1e293b; min-height: 100vh;
+        }
         
-        #loginScreen { max-width: 400px; margin: 100px auto; background: white; padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        #loginScreen input { width: 90%; padding: 12px; margin: 15px 0; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; font-size: 16px; }
-        #loginScreen button { width: 100%; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        /* Login */
+        #loginScreen { 
+            max-width: 420px; margin: 80px auto; background: white; 
+            padding: 40px 30px; border-radius: 16px; text-align: center; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+        }
+        #loginScreen h2 { margin-top: 0; color: #1e293b; }
+        #loginScreen p { color: #64748b; font-size: 14px; margin-bottom: 20px; }
+        #loginScreen input { 
+            width: 100%; padding: 14px; margin: 10px 0; 
+            border: 2px solid #e2e8f0; border-radius: 10px; 
+            text-align: center; font-size: 16px; transition: 0.2s;
+        }
+        #loginScreen input:focus { border-color: #667eea; outline: none; }
+        #loginScreen button { 
+            width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea, #764ba2); 
+            color: white; border: none; border-radius: 10px; 
+            font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 10px;
+        }
         
-        h2 { border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-top: 0; display: flex; justify-content: space-between; align-items: center;}
-        .toolbar { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;}
-        button { padding: 10px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
-        .btn-upload { background: #8b5cf6; } .btn-upload:hover { background: #7c3aed; }
-        .btn-refresh { background: #3b82f6; } .btn-refresh:hover { background: #2563eb; }
-        .btn-save { background: #10b981; padding: 6px 12px; font-size: 12px;} .btn-save:hover { background: #059669; }
-        .btn-edit { background: #f59e0b; } .btn-edit:hover { background: #d97706; }
+        /* Main App */
+        .container { 
+            max-width: 900px; margin: auto; background: white; 
+            padding: 30px; border-radius: 16px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15); display: none;
+        }
         
-        .table-container { overflow-x: auto; border-radius: 8px; border: 1px solid #e2e8f0; max-height: 75vh; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
-        th, td { border-bottom: 1px solid #e2e8f0; border-left: 1px solid #e2e8f0; padding: 10px; text-align: right; }
-        th { background: #f1f5f9; font-weight: 600; position: sticky; top: 0; z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        tbody tr:hover { background: #f8fafc; }
+        .app-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 25px;
+            flex-wrap: wrap; gap: 15px;
+        }
+        .app-header h1 { margin: 0; font-size: 22px; color: #1e293b; }
         
-        select { padding: 6px; border-radius: 4px; border: 1px solid #cbd5e1; outline: none; font-family: inherit; }
+        .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .header-btn {
+            padding: 8px 14px; border: none; border-radius: 8px; 
+            font-weight: bold; cursor: pointer; color: white; 
+            font-size: 13px; transition: 0.2s; display: inline-flex;
+            align-items: center; gap: 5px;
+        }
+        .btn-logout { background: #ef4444; }
+        .btn-export { background: #10b981; }
+        .btn-upload { background: #8b5cf6; }
+        .btn-new { background: #3b82f6; }
         
-        .status-msg { margin-bottom: 15px; padding: 10px; border-radius: 5px; text-align: center; display: none; font-weight: bold; }
+        /* Search Box */
+        .search-hero {
+            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+            padding: 30px; border-radius: 14px; text-align: center;
+            margin-bottom: 20px;
+        }
+        .search-hero h2 { margin: 0 0 8px 0; color: #1e293b; font-size: 20px; }
+        .search-hero p { margin: 0 0 20px 0; color: #64748b; font-size: 14px; }
+        .search-input-wrap {
+            display: flex; gap: 10px; max-width: 600px; margin: auto;
+            flex-wrap: wrap;
+        }
+        .search-input-wrap input {
+            flex: 1; min-width: 200px; padding: 14px 18px;
+            border: 2px solid #cbd5e1; border-radius: 10px;
+            font-size: 16px; font-family: inherit; transition: 0.2s;
+        }
+        .search-input-wrap input:focus { 
+            border-color: #667eea; outline: none; 
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+        .search-btn {
+            padding: 14px 30px; background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; border: none; border-radius: 10px;
+            font-weight: bold; cursor: pointer; font-size: 15px;
+        }
+        
+        /* Status Message */
+        .status-msg { 
+            padding: 12px; border-radius: 8px; text-align: center; 
+            font-weight: bold; display: none; margin-bottom: 20px;
+        }
         .success { background: #dcfce3; color: #166534; display: block; }
         .error { background: #fee2e2; color: #991b1b; display: block; }
         .info { background: #e0f2fe; color: #075985; display: block; }
         
-        .amount-cell { font-weight: bold; color: #059669; direction: ltr; text-align: right; }
-        .date-cell { color: #334155; direction: ltr; text-align: right; font-family: monospace; font-size: 14px;}
-        .missing-data { color: #94a3b8; font-style: italic; }
-
-        /* Modal Styles */
-        .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:100; justify-content:center; align-items:center; }
-        .modal-content { background:white; padding:20px; border-radius:10px; width:90%; max-width:600px; max-height:80vh; overflow-y:auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .modal-header { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; margin-bottom:15px; padding-bottom:10px; }
-        .modal-close { background:none; border:none; font-size:20px; cursor:pointer; color:#64748b; }
-        .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:15px; }
-        .form-group { display:flex; flex-direction:column; }
-        .form-group label { font-weight:bold; margin-bottom:5px; font-size:13px; color:#475569; }
-        .form-group input, .form-group select { padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-family:inherit; font-size:14px; }
-        .btn-modal-save { background: #10b981; width:100%; padding:12px; font-size:16px; margin-top:20px; }
-        .btn-modal-close { background: #ef4444; width:100%; padding:10px; font-size:14px; margin-top:10px; }
-        .search-bar { display:flex; gap:10px; margin-bottom:20px; }
+        /* Contract Card */
+        .contract-card {
+            display: none; background: white; border: 2px solid #e2e8f0;
+            border-radius: 14px; padding: 25px; margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        .contract-card.active { display: block; }
+        
+        .card-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;
+            flex-wrap: wrap; gap: 10px;
+        }
+        .card-header h3 { 
+            margin: 0; color: #1e293b; font-size: 18px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .contract-badge {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; padding: 4px 12px; border-radius: 20px;
+            font-size: 13px; font-weight: bold;
+        }
+        
+        .fields-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px; margin-bottom: 20px;
+        }
+        .field-group { display: flex; flex-direction: column; }
+        .field-group label {
+            font-weight: bold; margin-bottom: 6px; font-size: 12px;
+            color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .field-group input, .field-group select {
+            padding: 10px 12px; border: 1.5px solid #e2e8f0; 
+            border-radius: 8px; font-family: inherit; font-size: 14px;
+            background: #f8fafc; transition: 0.2s;
+        }
+        .field-group input:focus, .field-group select:focus {
+            border-color: #667eea; outline: none; background: white;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+        .field-group.highlight input {
+            background: #fef3c7; border-color: #f59e0b; font-weight: bold;
+        }
+        
+        .card-actions {
+            display: flex; gap: 10px; padding-top: 20px;
+            border-top: 2px solid #e2e8f0; flex-wrap: wrap;
+        }
+        .card-btn {
+            padding: 12px 24px; border: none; border-radius: 8px;
+            font-weight: bold; cursor: pointer; color: white;
+            font-size: 14px; transition: 0.2s;
+        }
+        .card-btn-save { background: linear-gradient(135deg, #10b981, #059669); flex: 1; min-width: 150px; }
+        .card-btn-close { background: #64748b; }
+        .card-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        
+        /* Export Dropdown */
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content {
+            display: none; position: absolute; left: 0; top: 100%;
+            background: white; min-width: 160px; box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            border-radius: 8px; z-index: 100; overflow: hidden; margin-top: 5px;
+        }
+        .dropdown.active .dropdown-content { display: block; }
+        .dropdown-content button {
+            width: 100%; padding: 12px 16px; background: white; color: #1e293b;
+            border: none; text-align: right; cursor: pointer; font-family: inherit;
+            font-size: 14px; transition: 0.2s;
+        }
+        .dropdown-content button:hover { background: #f1f5f9; }
+        
+        /* Empty state */
+        .empty-state {
+            text-align: center; padding: 60px 20px; color: #94a3b8;
+        }
+        .empty-state .icon { font-size: 60px; margin-bottom: 15px; }
+        
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .container { padding: 20px; }
+            .search-hero { padding: 20px; }
+            .fields-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
 
+<!-- Login -->
 <div id="loginScreen">
-    <h2>🔒 تسجيل الدخول للموظفين</h2>
-    <p style="color:#64748b; font-size: 14px;">الرجاء إدخال كلمة المرور للوصول إلى السجل.</p>
-    <input type="password" id="pinInput" placeholder="كلمة المرور...">
-    <button onclick="login()">دخول</button>
+    <h2>🔒 نظام إدارة العقود</h2>
+    <p>الرجاء إدخال كلمة المرور للدخول إلى النظام</p>
+    <input type="password" id="pinInput" placeholder="كلمة المرور..." onkeypress="if(event.key==='Enter') login()">
+    <button onclick="login()">🔓 دخول</button>
 </div>
 
+<!-- Main App -->
 <div class="container" id="mainApp">
-    <h2>
-        📋 سجل العقود الشامل (النسخة الموحدة)
-        <div class="toolbar">
-            <button class="btn-refresh" onclick="loadContracts()">🔄 تحديث البيانات</button>
-            <button class="btn-upload" onclick="document.getElementById('fileInput').click()">📂 رفع ملف إكسل</button>
-            <button class="btn-edit" onclick="openEditModal()">✏️ تحديث عقد مفرد</button>
+    <div class="app-header">
+        <h1>📋 نظام إدارة العقود</h1>
+        <div class="header-actions">
+            <button class="header-btn btn-new" onclick="openNewContract()">➕ عقد جديد</button>
+            <div class="dropdown" id="exportDropdown">
+                <button class="header-btn btn-export" onclick="toggleDropdown('exportDropdown')">⬇️ تنزيل السجل</button>
+                <div class="dropdown-content">
+                    <button onclick="exportFile('xlsx')">📊 تنزيل Excel (.xlsx)</button>
+                    <button onclick="exportFile('csv')">📄 تنزيل CSV (.csv)</button>
+                </div>
+            </div>
+            <button class="header-btn btn-upload" onclick="document.getElementById('fileInput').click()">📂 رفع إكسل</button>
             <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display: none;">
+            <button class="header-btn btn-logout" onclick="logout()">🚪 خروج</button>
         </div>
-    </h2>
+    </div>
     
     <div id="statusMsg" class="status-msg"></div>
 
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>تحديث</th>
-                    <th>الحالة</th>
-                    <th>رقم العقد</th>
-                    <th>رقم التأشيرة</th>
-                    <th>هوية العميل</th>
-                    <th>اسم العميل</th>
-                    <th>اسم العاملة</th>
-                    <th>الجنسية</th>
-                    <th>المهنة</th>
-                    <th>تاريخ البدء</th>
-                    <th>تاريخ الوصول</th>
-                    <th>المدة</th>
-                    <th>المبلغ المستحق</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody">
-                <tr><td colspan="13" style="text-align:center;">جاري تحميل البيانات...</td></tr>
-            </tbody>
-        </table>
+    <!-- Search Hero -->
+    <div class="search-hero">
+        <h2>🔍 البحث عن عقد</h2>
+        <p>ابحث باستخدام: <strong>رقم العقد</strong> أو <strong>رقم العميل</strong> أو <strong>رقم الهوية</strong></p>
+        <div class="search-input-wrap">
+            <input type="text" id="searchInput" placeholder="أدخل رقم البحث..." onkeypress="if(event.key==='Enter') searchContract()">
+            <button class="search-btn" onclick="searchContract()">🔍 بحث</button>
+        </div>
     </div>
-</div>
 
-<!-- Edit Modal -->
-<div id="editModal" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 style="margin:0;">✏️ تحديث بيانات عقد مفرد</h3>
-            <button class="modal-close" onclick="closeEditModal()">×</button>
+    <!-- Contract Card -->
+    <div class="contract-card" id="contractCard">
+        <div class="card-header">
+            <h3>📑 بيانات العقد <span class="contract-badge" id="contractBadge"></span></h3>
         </div>
-        <div class="search-bar">
-            <input type="text" id="searchId" placeholder="ابحث برقم العقد أو هوية العميل" style="flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:6px;">
-            <button onclick="searchContract()" style="background:#3b82f6; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer;">بحث</button>
+        <div class="fields-grid" id="formFields"></div>
+        <div class="card-actions">
+            <button class="card-btn card-btn-save" id="saveBtn" onclick="saveContract()">💾 حفظ التعديلات</button>
+            <button class="card-btn card-btn-close" onclick="closeCard()">✖️ إغلاق</button>
         </div>
-        <div id="editForm" style="display:none;">
-            <div id="formFields" class="form-grid"></div>
-            <button class="btn-save btn-modal-save" onclick="saveContract()">💾 حفظ التحديثات</button>
-            <button class="btn-modal-close" onclick="closeEditModal()">إغلاق</button>
-        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" id="emptyState">
+        <div class="icon">📭</div>
+        <h3>ابدأ بالبحث عن عقد</h3>
+        <p>أو قم برفع ملف إكسل لمزامنة البيانات القديمة</p>
     </div>
 </div>
 
 <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycby53L86hdxulgnksxeoxeSZLB_GB7_mL_rjd8UsWEsjj2nBr0jDRVl3GMqTpGfvDD4/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxQ5rwReMpS2qRR3h5lS0wfQGB6v2I133Sn6nz61jVZOCJtjocb3y7D8NwhCDIP6_8/exec';
     let STAFF_PIN = sessionStorage.getItem('staff_pin');
+    let currentContract = null;
+    let isNewContract = false;
 
-    const HEADER_CONFIG = {
-        contractNumber: { type: 'string', aliases: ['رقم العقد', 'رقم_العقد', 'contract no', 'رقم عقد'] },
-        issueNumber: { type: 'string', aliases: ['رقم الصادر', 'رقم التاشيرة', 'رقم التأشيرة', 'رقم تاشيرة', 'رقم تأشيرة', 'visa'] },
-        employerId: { type: 'string', aliases: ['هوية صاحب العمل', 'رقم الهوية', 'هوية العميل', 'id', 'رقم العميل'] },
-        clientName: { type: 'string', aliases: ['اسم العميل', 'العميل', 'إسم العميل', 'client name'] },
-        workerName: { type: 'string', aliases: ['اسم الخادمة', 'اسم العاملة', 'اسم العامله', 'worker', 'العاملة', 'العامله', 'اسم العامل', 'الاسم', 'name'] },
-        nationality: { type: 'string', aliases: ['الجنسية', 'الدولة', 'جنسية', 'country'] },
-        profession: { type: 'string', aliases: ['المهنة', 'مهنة', 'المهنه', 'job'] },
-        amountDue: { type: 'number', aliases: ['المبلغ المستحق', 'السعر المعتمد', 'السعر', 'المبلغ', 'amount', 'price'] },
-        startDate: { type: 'date', aliases: ['تاريخ بداية العقد', 'تاريخ التقديم', 'تاريخ البدء', 'start date'] },
-        arrivalDate: { type: 'date', aliases: ['تاريخ الوصول', 'تاريخ وصول', 'arrival date', 'تااريخ الوصول'] },
-        duration: { type: 'string', aliases: ['مدة الاستقدام', 'مدة العقد', 'المدة', 'due'] },
-        contractStatus: { type: 'string', aliases: ['حالة العقد', 'الحالة', 'status'] }
-    };
+    const FIELD_CONFIG = [
+        { key: 'contractNumber', label: 'رقم العقد', type: 'text', highlight: true, required: true },
+        { key: 'issueNumber', label: 'رقم التأشيرة', type: 'text' },
+        { key: 'customerId', label: 'رقم العميل', type: 'text', highlight: true },
+        { key: 'employerId', label: 'رقم الهوية', type: 'text', highlight: true },
+        { key: 'clientName', label: 'اسم العميل', type: 'text' },
+        { key: 'workerName', label: 'اسم الخادمة', type: 'text' },
+        { key: 'nationality', label: 'الدولة', type: 'text' },
+        { key: 'profession', label: 'المهنة', type: 'text' },
+        { key: 'amountDue', label: 'السعر المعتمد', type: 'number' },
+        { key: 'duration', label: 'مدة العقد', type: 'text' },
+        { key: 'applicationDate', label: 'تاريخ التقديم', type: 'date' },
+        { key: 'arrivalDate', label: 'تاريخ الوصول', type: 'date' },
+        { key: 'month', label: 'الشهر', type: 'text' },
+        { key: 'contractStatus', label: 'حالة العقد', type: 'select' },
+        { key: 'agent', label: 'الوكيل', type: 'text' },
+        { key: 'writer', label: 'كاتب العقد', type: 'text' },
+        { key: 'contractType', label: 'التعاقد', type: 'text' },
+        { key: 'id', label: 'الرقم التسلسلي (#)', type: 'text' }
+    ];
 
     const SYSTEM_STATUSES = ['جديد', 'قيد المعالجة', 'تم الاصدار', 'تم الوصول', 'بدء العقد', 'مكتمل', 'ملغي'];
 
-    const FIELD_LABELS = {
-        contractNumber: 'رقم العقد', issueNumber: 'رقم التأشيرة', employerId: 'هوية العميل',
-        clientName: 'اسم العميل', workerName: 'اسم العاملة', nationality: 'الجنسية',
-        profession: 'المهنة', amountDue: 'المبلغ المستحق', duration: 'المدة',
-        startDate: 'تاريخ البدء', arrivalDate: 'تاريخ الوصول', contractStatus: 'حالة العقد'
+    const HEADER_CONFIG = {
+        id: { type: 'string', aliases: ['#', 'ا', 'م', 'id', 'رقم تسلسلي'] },
+        clientName: { type: 'string', aliases: ['اسم العميل', 'العميل', 'إسم العميل'] },
+        contractNumber: { type: 'string', aliases: ['رقم العقد', 'رقم_العقد', 'contract no'] },
+        profession: { type: 'string', aliases: ['المهنة', 'مهنة', 'المهنه'] },
+        month: { type: 'string', aliases: ['month - الشهر', 'الشهر', 'month'] },
+        applicationDate: { type: 'date', aliases: ['تاريخ التقديم', 'تاريخ بداية العقد'] },
+        customerId: { type: 'string', aliases: ['رقم العميل', 'customer id'] },
+        workerName: { type: 'string', aliases: ['اسم الخادمة', 'اسم العاملة', 'اسم العامله', 'الخادمة'] },
+        arrivalDate: { type: 'date', aliases: ['تااريخ الوصول', 'تاريخ الوصول'] },
+        contractStatus: { type: 'string', aliases: ['حالة العقد', 'الحالة'] },
+        employerId: { type: 'string', aliases: ['رقم الهوية', 'هوية صاحب العمل', 'هوية العميل'] },
+        issueNumber: { type: 'string', aliases: ['رقم التاشيرة', 'رقم التأشيرة', 'رقم الصادر'] },
+        nationality: { type: 'string', aliases: ['الدولة', 'الجنسية', 'جنسية'] },
+        duration: { type: 'string', aliases: ['مدة العقد', 'مدة الاستقدام', 'المدة'] },
+        amountDue: { type: 'number', aliases: ['السعر المعتمد', 'المبلغ المستحق', 'السعر', 'المبلغ'] },
+        agent: { type: 'string', aliases: ['الوكيل', 'وكيل'] },
+        writer: { type: 'string', aliases: ['كاتب العقد', 'الكاتب'] },
+        contractType: { type: 'string', aliases: ['التعاقد', 'نوع العقد'] }
     };
 
-    let currentEditContract = null;
-
-    if (STAFF_PIN) { showApp(); loadContracts(); }
+    if (STAFF_PIN) showApp();
 
     function login() {
         STAFF_PIN = document.getElementById('pinInput').value;
+        if (!STAFF_PIN) return;
         sessionStorage.setItem('staff_pin', STAFF_PIN);
         showApp();
-        loadContracts();
+    }
+
+    function logout() {
+        sessionStorage.removeItem('staff_pin');
+        location.reload();
     }
 
     function showApp() {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
+        document.getElementById('searchInput').focus();
     }
 
     function setStatus(msg, type) {
@@ -170,19 +320,191 @@
         if (type !== 'error') setTimeout(() => el.className = 'status-msg', 5000);
     }
 
+    function toggleDropdown(id) {
+        document.getElementById(id).classList.toggle('active');
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.dropdown')) {
+            document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('active'));
+        }
+    });
+
     async function apiCall(action, payload = null) {
         const url = `${API_URL}?action=${action}&token=${encodeURIComponent(STAFF_PIN)}`;
-        const options = { method: 'POST', redirect: 'follow', cache: 'no-store', headers: { 'Content-Type': 'text/plain;charset=utf-8' } };
-        options.body = JSON.stringify(payload ? payload : { fetchFresh: true });
+        const options = { 
+            method: 'POST', redirect: 'follow', cache: 'no-store',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        };
+        options.body = JSON.stringify(payload || { fetchFresh: true });
         
         const response = await fetch(url, options);
         const json = await response.json();
         
         if (!json.success) {
-            if (json.error.includes("غير مصرح")) { sessionStorage.removeItem('staff_pin'); location.reload(); }
+            if (json.error.includes("غير مصرح")) { logout(); }
             throw new Error(json.error);
         }
         return json.data;
+    }
+
+    function formatDateForInput(val) {
+        if (!val) return '';
+        let str = String(val).trim();
+        if (str.includes('T')) return str.split('T')[0];
+        const num = parseFloat(str);
+        if (!isNaN(num) && num > 30000 && num < 60000) {
+            return new Date((num - 25569) * 86400 * 1000).toISOString().split('T')[0];
+        }
+        const d = new Date(str);
+        return isNaN(d.getTime()) ? str : d.toISOString().split('T')[0];
+    }
+
+    function renderContractForm(contract) {
+        const container = document.getElementById('formFields');
+        container.innerHTML = '';
+        
+        FIELD_CONFIG.forEach(field => {
+            const div = document.createElement('div');
+            div.className = 'field-group' + (field.highlight ? ' highlight' : '');
+            
+            let inputHtml = '';
+            const value = contract[field.key] || '';
+            
+            if (field.type === 'select') {
+                let opts = SYSTEM_STATUSES.map(s => 
+                    `<option value="${s}" ${value === s ? 'selected' : ''}>${s}</option>`
+                ).join('');
+                if (value && !SYSTEM_STATUSES.includes(value)) {
+                    opts += `<option value="${value}" selected>${value}</option>`;
+                }
+                inputHtml = `<select id="edit_${field.key}">${opts}</select>`;
+            } else if (field.type === 'date') {
+                inputHtml = `<input type="date" id="edit_${field.key}" value="${formatDateForInput(value)}">`;
+            } else if (field.type === 'number') {
+                inputHtml = `<input type="number" step="0.01" id="edit_${field.key}" value="${value}">`;
+            } else {
+                inputHtml = `<input type="text" id="edit_${field.key}" value="${value}">`;
+            }
+            
+            div.innerHTML = `<label>${field.label}${field.required ? ' *' : ''}</label>${inputHtml}`;
+            container.appendChild(div);
+        });
+    }
+
+    async function searchContract() {
+        const searchId = document.getElementById('searchInput').value.trim();
+        if (!searchId) {
+            setStatus('الرجاء إدخال رقم للبحث', 'error');
+            return;
+        }
+        
+        setStatus('جاري البحث...', 'info');
+        document.getElementById('emptyState').style.display = 'none';
+        
+        try {
+            const contracts = await apiCall('getContracts');
+            const contract = contracts.find(c => 
+                String(c.contractNumber || '').trim() === searchId ||
+                String(c.customerId || '').trim() === searchId ||
+                String(c.employerId || '').trim() === searchId
+            );
+            
+            if (!contract) {
+                setStatus('❌ لم يتم العثور على عقد. يمكنك إنشاء عقد جديد.', 'error');
+                closeCard();
+                return;
+            }
+            
+            currentContract = contract;
+            isNewContract = false;
+            document.getElementById('contractBadge').textContent = `عقد رقم: ${contract.contractNumber}`;
+            renderContractForm(contract);
+            document.getElementById('contractCard').classList.add('active');
+            document.getElementById('saveBtn').textContent = '💾 حفظ التعديلات';
+            setStatus('✅ تم العثور على العقد', 'success');
+        } catch (err) {
+            setStatus('❌ خطأ: ' + err.message, 'error');
+        }
+    }
+
+    function openNewContract() {
+        isNewContract = true;
+        currentContract = { contractStatus: 'جديد' };
+        document.getElementById('contractBadge').textContent = 'عقد جديد';
+        renderContractForm(currentContract);
+        document.getElementById('contractCard').classList.add('active');
+        document.getElementById('saveBtn').textContent = '➕ إضافة العقد';
+        document.getElementById('emptyState').style.display = 'none';
+        setStatus('أدخل بيانات العقد الجديد ثم اضغط "إضافة العقد"', 'info');
+    }
+
+    function closeCard() {
+        document.getElementById('contractCard').classList.remove('active');
+        document.getElementById('emptyState').style.display = 'block';
+        currentContract = null;
+        isNewContract = false;
+    }
+
+    async function saveContract() {
+        const payload = { updatedBy: 'موظف النظام' };
+        
+        FIELD_CONFIG.forEach(field => {
+            const el = document.getElementById(`edit_${field.key}`);
+            if (el) payload[field.key] = el.value.trim();
+        });
+        
+        if (!payload.contractNumber) {
+            setStatus('❌ رقم العقد مطلوب', 'error');
+            return;
+        }
+        
+        setStatus(isNewContract ? 'جاري إضافة العقد...' : 'جاري حفظ التعديلات...', 'info');
+        
+        try {
+            if (isNewContract) {
+                // إضافة عقد جديد عبر bulkImport
+                await apiCall('bulkImport', { contracts: [payload] });
+                setStatus('✅ تمت إضافة العقد بنجاح', 'success');
+            } else {
+                await apiCall('updateContract', payload);
+                setStatus('✅ تم حفظ التعديلات بنجاح', 'success');
+            }
+            closeCard();
+        } catch (err) {
+            setStatus('❌ خطأ: ' + err.message, 'error');
+        }
+    }
+
+    async function exportFile(format) {
+        setStatus('جاري تحميل السجل...', 'info');
+        try {
+            const contracts = await apiCall('getContracts');
+            if (!contracts || contracts.length === 0) {
+                setStatus('❌ السجل فارغ', 'error');
+                return;
+            }
+            
+            const dataToExport = contracts.map(c => {
+                const row = {};
+                FIELD_CONFIG.forEach(f => {
+                    row[f.label] = c[f.key] || '';
+                });
+                return row;
+            });
+            
+            const ws = XLSX.utils.json_to_sheet(dataToExport);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Contracts');
+            
+            const fileName = `سجل_العقود_${new Date().toISOString().split('T')[0]}.${format}`;
+            XLSX.writeFile(wb, fileName);
+            
+            setStatus(`✅ تم تنزيل الملف: ${fileName}`, 'success');
+            toggleDropdown('exportDropdown');
+        } catch (err) {
+            setStatus('❌ فشل التنزيل: ' + err.message, 'error');
+        }
     }
 
     function parseExcelCell(value, type) {
@@ -190,119 +512,45 @@
         if (type === 'number') {
             let num = parseFloat(value);
             if (!isNaN(num)) return num;
-            let strVal = String(value).replace(/[^\d.-]/g, '');
+            const strVal = String(value).replace(/[^\d.-]/g, '');
             num = parseFloat(strVal);
             return isNaN(num) ? 0 : num;
         }
         if (type === 'date') {
             if (typeof value === 'number') {
                 const dDate = new Date(Math.round((value - 25569) * 86400 * 1000));
-                dDate.setMinutes(dDate.getMinutes() + dDate.getTimezoneOffset());
                 return dDate.toISOString().split('T')[0];
             }
-            let strVal = String(value).trim();
-            if (strVal.includes('T')) return strVal.split('T')[0];
+            const strVal = String(value).trim();
             const d = new Date(strVal);
-            if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
-            return strVal;
+            return isNaN(d.getTime()) ? strVal : d.toISOString().split('T')[0];
         }
         return String(value).trim();
-    }
-
-    function cleanString(val) { return val ? String(val).trim() : ''; }
-
-    function formatAmountDisplay(val) {
-        if (!val) return '';
-        const num = parseFloat(String(val).replace(/[^\d.-]/g, ''));
-        if (!isNaN(num)) return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        return String(val).trim();
-    }
-
-    function formatDateDisplay(val) {
-        if (!val) return '';
-        let str = String(val).trim();
-        if (str.includes('T')) return str.split('T')[0];
-        const num = parseFloat(str);
-        if (!isNaN(num) && num > 30000 && num < 60000 && !str.includes('/')) { 
-            const dDate = new Date((num - 25569) * 86400 * 1000);
-            return dDate.toISOString().split('T')[0];
-        }
-        const d = new Date(str);
-        if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
-        if (str.includes(' ')) return str.split(' ')[0];
-        return str;
-    }
-
-    async function loadContracts() {
-        setStatus('جاري جلب البيانات...', 'info');
-        try {
-            const contracts = await apiCall('getContracts');
-            const tbody = document.getElementById('tableBody');
-            
-            if (!contracts || contracts.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="13" style="text-align:center; font-weight:bold; padding: 20px;">لا توجد بيانات حالياً (السجل فارغ)</td></tr>';
-                setStatus('السجل فارغ.', 'info');
-                return;
-            }
-            
-            tbody.innerHTML = contracts.map(c => {
-                const currentStatus = String(c.contractStatus || 'جديد').trim();
-                let opts = SYSTEM_STATUSES.map(s => `<option value="${s}" ${currentStatus === s ? 'selected' : ''}>${s}</option>`).join('');
-                if (!SYSTEM_STATUSES.includes(currentStatus)) opts += `<option value="${currentStatus}" selected>${currentStatus}</option>`;
-
-                const cleanWorker = cleanString(c.workerName);
-                const workerDisplay = cleanWorker ? cleanWorker : '<span class="missing-data">— لا يوجد —</span>';
-
-                return `
-                <tr>
-                    <td><button class="btn-save" data-id="${c.contractNumber}">حفظ</button></td>
-                    <td><select class="status-select" data-id="${c.contractNumber}">${opts}</select></td>
-                    <td><strong>${cleanString(c.contractNumber)}</strong></td>
-                    <td>${cleanString(c.issueNumber)}</td>
-                    <td>${cleanString(c.employerId)}</td>
-                    <td>${cleanString(c.clientName)}</td>
-                    <td>${workerDisplay}</td>
-                    <td>${cleanString(c.nationality)}</td>
-                    <td>${cleanString(c.profession)}</td>
-                    <td class="date-cell">${formatDateDisplay(c.startDate)}</td>
-                    <td class="date-cell">${formatDateDisplay(c.arrivalDate)}</td>
-                    <td>${cleanString(c.duration)}</td>
-                    <td class="amount-cell">${formatAmountDisplay(c.amountDue)}</td>
-                </tr>
-            `}).join('');
-
-            document.querySelectorAll('.btn-save').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    const id = btn.getAttribute('data-id');
-                    const newStatus = document.querySelector(`.status-select[data-id="${id}"]`).value;
-                    setStatus(`جاري حفظ حالة ${id}...`, 'info');
-                    try {
-                        await apiCall('updateStatus', { contractNumber: id, newStatus: newStatus, updatedBy: 'موظف النظام' });
-                        setStatus('✅ تم التحديث بنجاح', 'success');
-                    } catch (err) { setStatus('❌ خطأ: ' + err.message, 'error'); }
-                });
-            });
-            setStatus('✅ تم تحميل السجل بنجاح', 'success');
-        } catch (err) { setStatus('❌ فشل التحميل: ' + err.message, 'error'); }
     }
 
     document.getElementById('fileInput').addEventListener('change', async (e) => {
         if (!e.target.files.length) return;
         const file = e.target.files[0];
-        setStatus('جاري معالجة الملف واستخراج البيانات...', 'info');
+        setStatus('جاري معالجة الملف...', 'info');
         
         try {
             const data = await file.arrayBuffer();
-            const workbook = XLSX.read(data, { type: 'array' }); 
-            const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: "", raw: true });
+            const workbook = XLSX.read(data, { type: 'array' });
+            const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {
+                header: 1, defval: "", raw: true
+            });
             
             if (rows.length < 2) throw new Error('الملف فارغ');
 
-            const fileHeaders = rows[0].map(h => String(h).replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase());
+            const fileHeaders = rows[0].map(h => 
+                String(h).replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase()
+            );
             const indexMap = {};
 
             Object.keys(HEADER_CONFIG).forEach(key => {
-                indexMap[key] = fileHeaders.findIndex(h => HEADER_CONFIG[key].aliases.some(alias => h.includes(alias.toLowerCase())));
+                indexMap[key] = fileHeaders.findIndex(h => 
+                    HEADER_CONFIG[key].aliases.some(alias => h.includes(alias.toLowerCase()))
+                );
             });
 
             const toImport = [];
@@ -311,115 +559,30 @@
                 if (!row || row.length === 0) continue;
 
                 let primaryId = '';
-                if (indexMap.contractNumber !== -1 && row[indexMap.contractNumber]) primaryId = String(row[indexMap.contractNumber]).trim();
-                else if (indexMap.issueNumber !== -1 && row[indexMap.issueNumber]) primaryId = String(row[indexMap.issueNumber]).trim();
-                
+                if (indexMap.contractNumber !== -1 && row[indexMap.contractNumber]) {
+                    primaryId = String(row[indexMap.contractNumber]).trim();
+                }
                 if (!primaryId) continue;
 
                 const item = {};
                 Object.keys(indexMap).forEach(key => {
-                    let rawVal = indexMap[key] !== -1 ? row[indexMap[key]] : '';
+                    const rawVal = indexMap[key] !== -1 ? row[indexMap[key]] : '';
                     item[key] = parseExcelCell(rawVal, HEADER_CONFIG[key].type);
                 });
-                
                 item.contractNumber = primaryId;
                 toImport.push(item);
             }
 
-            if (toImport.length === 0) throw new Error('لم يتم العثور على أسطر صالحة للاستيراد');
+            if (toImport.length === 0) throw new Error('لم يتم العثور على عقود صالحة');
 
-            setStatus(`جاري مزامنة ${toImport.length} عقد مع السجل...`, 'info');
+            setStatus(`جاري مزامنة ${toImport.length} عقد...`, 'info');
             const res = await apiCall('bulkImport', { contracts: toImport });
-            
-            // UPDATED: Shows updated count alongside added and skipped
-            setStatus(`✅ اكتمل الرفع: تمت إضافة ${res.added}، وتحديث ${res.updated}، وتخطي ${res.skipped} مكرر`, 'success');
-            loadContracts();
+            setStatus(`✅ تمت إضافة ${res.added}، وتحديث ${res.updated}`, 'success');
         } catch (err) {
-            setStatus('❌ فشل في معالجة أو رفع الملف: ' + err.message, 'error');
+            setStatus('❌ فشل رفع الملف: ' + err.message, 'error');
         }
-        e.target.value = ''; 
+        e.target.value = '';
     });
-
-    // --- Modal Logic ---
-    function openEditModal() {
-        document.getElementById('editModal').style.display = 'flex';
-        document.getElementById('searchId').value = '';
-        document.getElementById('editForm').style.display = 'none';
-    }
-
-    function closeEditModal() {
-        document.getElementById('editModal').style.display = 'none';
-    }
-
-    async function searchContract() {
-        const searchId = document.getElementById('searchId').value.trim();
-        if (!searchId) { setStatus('الرجاء إدخال رقم العقد أو الهوية', 'error'); return; }
-        
-        setStatus('جاري البحث...', 'info');
-        try {
-            const contracts = await apiCall('getContracts');
-            // Search by Contract Number OR Employer ID (User ID)
-            const contract = contracts.find(c => String(c.contractNumber).trim() === searchId || String(c.employerId).trim() === searchId);
-            
-            if (!contract) {
-                setStatus('❌ لم يتم العثور على العقد', 'error');
-                return;
-            }
-            
-            currentEditContract = contract;
-            renderEditForm(contract);
-            document.getElementById('editForm').style.display = 'block';
-            setStatus('✅ تم العثور على العقد', 'success');
-        } catch (err) {
-            setStatus('❌ خطأ: ' + err.message, 'error');
-        }
-    }
-
-    function renderEditForm(contract) {
-        const container = document.getElementById('formFields');
-        container.innerHTML = '';
-        
-        Object.keys(FIELD_LABELS).forEach(key => {
-            const div = document.createElement('div');
-            div.className = 'form-group';
-            
-            if (key === 'contractStatus') {
-                let opts = SYSTEM_STATUSES.map(s => `<option value="${s}" ${contract[key] === s ? 'selected' : ''}>${s}</option>`).join('');
-                if (contract[key] && !SYSTEM_STATUSES.includes(contract[key])) opts += `<option value="${contract[key]}" selected>${contract[key]}</option>`;
-                div.innerHTML = `<label>${FIELD_LABELS[key]}</label><select id="edit_${key}">${opts}</select>`;
-            } else if (key.includes('Date')) {
-                div.innerHTML = `<label>${FIELD_LABELS[key]}</label><input type="date" id="edit_${key}" value="${formatDateDisplay(contract[key]) || ''}">`;
-            } else {
-                div.innerHTML = `<label>${FIELD_LABELS[key]}</label><input type="text" id="edit_${key}" value="${contract[key] || ''}">`;
-            }
-            container.appendChild(div);
-        });
-    }
-
-    async function saveContract() {
-        if (!currentEditContract) return;
-        
-        const payload = {
-            contractNumber: currentEditContract.contractNumber,
-            employerId: currentEditContract.employerId,
-            updatedBy: 'موظف النظام'
-        };
-        
-        Object.keys(FIELD_LABELS).forEach(key => {
-            const el = document.getElementById(`edit_${key}`);
-            if (el) payload[key] = el.value.trim();
-        });
-        
-        setStatus('جاري حفظ التحديثات...', 'info');
-        try {
-            await apiCall('updateContract', payload);
-            setStatus('✅ تم تحديث العقد بنجاح', 'success');
-            closeEditModal();
-            loadContracts();
-        } catch (err) {
-            setStatus('❌ خطأ: ' + err.message, 'error');
-        }
-    }
 </script>
 </body>
 </html>
