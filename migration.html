@@ -94,18 +94,18 @@
 
     // أعمدة النظام النهائية + البدائل الممكنة (Aliases)
     const SYSTEM_FIELDS = [
-        { key: 'contractNumber', label: 'رقم العقد', aliases: ['رقم العقد', 'رقم عقد', 'contract no', 'contract number'] },
+    { key: 'contractNumber', label: 'رقم العقد', aliases: ['رقم العقد', 'رقم عقد', 'contract no', 'contract number'] },
         { key: 'issueNumber', label: 'رقم التأشيرة', aliases: ['رقم التأشيرة', 'رقم التاشيرة', 'رقم الصادر', 'visa'] },
-        { key: 'employerId', label: 'رقم الهوية', aliases: ['رقم الهوية', 'هوية العميل', 'هوية صاحب العمل'] },
-        { key: 'clientName', label: 'اسم العميل', aliases: ['اسم العميل', 'العميل', 'إسم العميل'] },
-        { key: 'workerName', label: 'اسم الخادمة', aliases: ['اسم الخادمة', 'اسم العاملة', 'اسم العامله', 'الخادمة'] },
-        { key: 'nationality', label: 'الدولة', aliases: ['الدولة', 'الجنسية', 'country'] },
-        { key: 'profession', label: 'المهنة', aliases: ['المهنة', 'مهنة', 'المهنه'] },
-        { key: 'amountDue', label: 'السعر المعتمد', aliases: ['السعر المعتمد', 'المبلغ المستحق', 'السعر', 'المبلغ', 'سعر المعتمد على العقد'] },
-        { key: 'duration', label: 'مدة العقد', aliases: ['مدة العقد', 'مدة الاستقدام', 'المدة'] },
-        { key: 'applicationDate', label: 'تاريخ التقديم', aliases: ['تاريخ التقديم', 'تاريخ العقد'] },
+    { key: 'employerId', label: 'هوية صاحب العمل', aliases: ['رقم الهوية', 'هوية صاحب العمل', 'هوية العميل', 'هويةصاحبالعمل'] },
+    { key: 'clientName', label: 'اسم العميل', aliases: ['اسم العميل', 'العميل', 'إسم العميل'] },
+    { key: 'workerName', label: 'اسم العاملة', aliases: ['اسم الخادمة', 'اسم العاملة', 'اسم العامله', 'الخادمة', 'اسمالمستقدم'] },
+    { key: 'nationality', label: 'الجنسية', aliases: ['الدولة', 'الجنسية', 'country', 'الجنس'] }, // ✅ أضفنا "الجنس"
+    { key: 'profession', label: 'المهنة', aliases: ['المهنة', 'مهنة', 'المهنه'] },
+    { key: 'amountDue', label: 'المبلغ المستحق', aliases: ['السعر المعتمد', 'المبلغ المستحق', 'السعر', 'المبلغ', 'المبلغالمستحق'] },
+    { key: 'duration', label: 'مدة الاستقدام', aliases: ['مدة العقد', 'مدة الاستقدام', 'المدة', 'مدةالاستقدام', 'مدة_الاستقدام'] },
+    { key: 'applicationDate', label: 'تاريخ بداية العقد', aliases: ['تاريخ التقديم', 'تاريخ العقد', 'تاريخ_بداية_العقد', 'تاريخبدايةالعقد', 'تاريخ بداية العقد'] },
         { key: 'arrivalDate', label: 'تاريخ الوصول', aliases: ['تاريخ الوصول', 'تااريخ الوصول', 'تاريخ اسم الخادمة'] },
-        { key: 'contractStatus', label: 'حالة العقد', aliases: ['حالة العقد', 'الحالة'] },
+    { key: 'contractStatus', label: 'حالة العقد', aliases: ['حالة العقد', 'الحالة', 'حالةالعقد'] },
         { key: 'month', label: 'الشهر', aliases: ['الشهر', 'month', 'تاريخ العقد الشهر'] },
         { key: 'customerId', label: 'رقم العميل', aliases: ['رقم العميل'] },
         { key: 'agent', label: 'الوكيل', aliases: ['الوكيل', 'وكيل'] },
