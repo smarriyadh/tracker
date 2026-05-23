@@ -79,16 +79,16 @@
 </div>
 
 <script>
-    // ⚠️ هام: استبدل هذا الرابط بالرابط الجديد بعد إعادة النشر
-    const API_URL = 'https://script.google.com/macros/s/AKfycbyeqTeeoE84I829_ptwPF1kJD_tDbFRZjDJB0OptOh41lZPNj-ZbFGLHL3GsYF4c4Q/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbz1FSwS2daUQgc0OysMebIzXEACEwApKnBgY0nJs3bX9cRz4yVkyEZJRtLTMYwYJ3M/exec';
     const STAFF_PIN = sessionStorage.getItem('staff_pin') || prompt('أدخل كلمة المرور:');
 
+    // ✅ Updated SYSTEM_FIELDS - Removed # and month, updated labels
     const SYSTEM_FIELDS = [
         { key: 'contractNumber', label: 'رقم العقد', aliases: ['رقم العقد', 'رقم عقد', 'contract no', 'contract number'] },
         { key: 'issueNumber', label: 'رقم التأشيرة', aliases: ['رقم التأشيرة', 'رقم التاشيرة', 'رقم الصادر', 'visa'] },
         { key: 'employerId', label: 'هوية صاحب العمل', aliases: ['رقم الهوية', 'هوية صاحب العمل', 'هوية العميل', 'هويةصاحبالعمل'] },
         { key: 'clientName', label: 'اسم العميل', aliases: ['اسم العميل', 'العميل', 'إسم العميل'] },
-        { key: 'workerName', label: 'اسم العاملة', aliases: ['اسم الخادمة', 'اسم العاملة', 'اسم العامله', 'الخادمة', 'اسمالمستقدم'] },
+        { key: 'workerName', label: 'اسم العاملـ/ـه', aliases: ['اسم الخادمة', 'اسم العاملة', 'اسم العامله', 'الخادمة', 'اسم العامل', 'اسمالمستقدم'] }, // ✅ Changed
         { key: 'nationality', label: 'الجنسية', aliases: ['الدولة', 'الجنسية', 'country', 'الجنس'] },
         { key: 'profession', label: 'المهنة', aliases: ['المهنة', 'مهنة', 'المهنه'] },
         { key: 'amountDue', label: 'المبلغ المستحق', aliases: ['السعر المعتمد', 'المبلغ المستحق', 'السعر', 'المبلغ', 'المبلغالمستحق'] },
@@ -96,12 +96,12 @@
         { key: 'applicationDate', label: 'تاريخ بداية العقد', aliases: ['تاريخ التقديم', 'تاريخ العقد', 'تاريخ_بداية_العقد', 'تاريخبدايةالعقد', 'تاريخ بداية العقد'] },
         { key: 'arrivalDate', label: 'تاريخ الوصول', aliases: ['تاريخ الوصول', 'تااريخ الوصول', 'تاريخ اسم الخادمة'] },
         { key: 'contractStatus', label: 'حالة العقد', aliases: ['حالة العقد', 'الحالة', 'حالةالعقد'] },
-        { key: 'month', label: 'الشهر', aliases: ['الشهر', 'month', 'تاريخ العقد الشهر'] },
+        // ✅ Removed: month field
         { key: 'customerId', label: 'رقم العميل', aliases: ['رقم العميل'] },
         { key: 'agent', label: 'الوكيل', aliases: ['الوكيل', 'وكيل'] },
         { key: 'writer', label: 'كاتب العقد', aliases: ['كاتب العقد', 'الكاتب'] },
-        { key: 'contractType', label: 'التعاقد', aliases: ['التعاقد', 'نوع العقد'] },
-        { key: 'id', label: '#', aliases: ['#', 'م', 'ا', 'رقم تسلسلي'] }
+        { key: 'contractType', label: 'نوع التعاقد', aliases: ['التعاقد', 'نوع العقد', 'نوع التعاقد'] } // ✅ Changed
+        // ✅ Removed: id field (#)
     ];
 
     let fileSheets = [], currentMapping = {}, mergedData = [];
@@ -232,12 +232,11 @@
 
     function backToMapping() { document.getElementById('previewStep').style.display = 'none'; document.getElementById('mappingStep').style.display = 'block'; }
 
-    // ✅ دالة معالجة خلايا الإكسل - الإصدار المصحح للأسعار
+    // ✅ Updated parseExcelCell
     function parseExcelCell(value, type) {
         if (value === null || value === undefined || value === "") return "";
         if (type === 'number') {
             let str = String(value).trim();
-            // إصلاح التنسيق العربي للأسعار: إزالة النقاط، تحويل الفواصل لنقاط عشرية
             str = str.replace(/\./g, '').replace(/,/g, '.');
             let num = parseFloat(str);
             return isNaN(num) ? 0 : num;
