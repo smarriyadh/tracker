@@ -3,209 +3,280 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة العقود - البحث والتعديل</title>
+    <title>SMARYAD - نظام إدارة العقود</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <style>
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        :root {
+            --primary: #1e40af;
+            --primary-dark: #1e3a8a;
+            --primary-light: #dbeafe;
+            --secondary: #64748b;
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+        
         body { 
-            font-family: Tahoma, 'Segoe UI', Arial, sans-serif; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            margin: 0; padding: 20px; color: #1e293b; min-height: 100vh;
+            font-family: Tahoma, 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif; 
+            background: var(--bg);
+            margin: 0; padding: 0; color: var(--text); min-height: 100vh;
+            line-height: 1.5;
+        }
+        
+        /* Logo Header */
+        .logo-header {
+            background: var(--card-bg);
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .logo-img {
+            height: 40px;
+            width: auto;
+            object-fit: contain;
+        }
+        .logo-text {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.5px;
         }
         
         /* Login */
         #loginScreen { 
-            max-width: 420px; margin: 80px auto; background: white; 
-            padding: 40px 30px; border-radius: 16px; text-align: center; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            max-width: 400px; margin: 100px auto; background: var(--card-bg); 
+            padding: 40px 30px; border-radius: 12px; text-align: center; 
+            box-shadow: var(--shadow-lg);
         }
-        #loginScreen h2 { margin-top: 0; color: #1e293b; }
-        #loginScreen p { color: #64748b; font-size: 14px; margin-bottom: 20px; }
+        #loginScreen .logo-wrapper { margin-bottom: 24px; }
+        #loginScreen .logo-img { height: 50px; }
+        #loginScreen h2 { margin: 0 0 8px 0; color: var(--text); font-size: 20px; }
+        #loginScreen p { color: var(--text-light); font-size: 14px; margin-bottom: 24px; }
         #loginScreen input { 
-            width: 100%; padding: 14px; margin: 10px 0; 
-            border: 2px solid #e2e8f0; border-radius: 10px; 
-            text-align: center; font-size: 16px; transition: 0.2s;
+            width: 100%; padding: 12px 16px; margin: 8px 0; 
+            border: 1px solid var(--border); border-radius: 8px; 
+            text-align: center; font-size: 15px; transition: 0.2s;
+            font-family: inherit;
         }
-        #loginScreen input:focus { border-color: #667eea; outline: none; }
+        #loginScreen input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px var(--primary-light); }
         #loginScreen button { 
-            width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea, #764ba2); 
-            color: white; border: none; border-radius: 10px; 
-            font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 10px;
+            width: 100%; padding: 12px; background: var(--primary); 
+            color: white; border: none; border-radius: 8px; 
+            font-weight: 600; cursor: pointer; font-size: 15px; margin-top: 8px;
+            transition: 0.2s;
         }
+        #loginScreen button:hover { background: var(--primary-dark); }
         
         /* Main App */
         .container { 
-            max-width: 900px; margin: auto; background: white; 
-            padding: 30px; border-radius: 16px; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.15); display: none;
+            max-width: 900px; margin: 20px auto; background: var(--card-bg); 
+            padding: 24px; border-radius: 12px; 
+            box-shadow: var(--shadow-lg); display: none;
         }
         
         .app-header {
             display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 25px;
-            flex-wrap: wrap; gap: 15px;
+            border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px;
+            flex-wrap: wrap; gap: 12px;
         }
-        .app-header h1 { margin: 0; font-size: 22px; color: #1e293b; }
+        .app-header h1 { margin: 0; font-size: 18px; color: var(--text); font-weight: 600; }
         
         .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
         .header-btn {
-            padding: 8px 14px; border: none; border-radius: 8px; 
-            font-weight: bold; cursor: pointer; color: white; 
+            padding: 8px 14px; border: none; border-radius: 6px; 
+            font-weight: 500; cursor: pointer; color: white; 
             font-size: 13px; transition: 0.2s; display: inline-flex;
-            align-items: center; gap: 5px;
+            align-items: center; gap: 6px; font-family: inherit;
         }
-        .btn-logout { background: #ef4444; }
-        .btn-export { background: #10b981; }
-        .btn-upload { background: #8b5cf6; }
-        .btn-new { background: #3b82f6; }
+        .btn-logout { background: var(--danger); }
+        .btn-logout:hover { background: #b91c1c; }
+        .btn-export { background: var(--success); }
+        .btn-export:hover { background: #047857; }
+        .btn-upload { background: #7c3aed; }
+        .btn-upload:hover { background: #6d28d9; }
+        .btn-new { background: var(--primary); }
+        .btn-new:hover { background: var(--primary-dark); }
         
         /* Search Box */
         .search-hero {
-            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-            padding: 30px; border-radius: 14px; text-align: center;
+            background: var(--primary-light);
+            padding: 24px; border-radius: 10px; text-align: center;
             margin-bottom: 20px;
         }
-        .search-hero h2 { margin: 0 0 8px 0; color: #1e293b; font-size: 20px; }
-        .search-hero p { margin: 0 0 20px 0; color: #64748b; font-size: 14px; }
+        .search-hero h2 { margin: 0 0 6px 0; color: var(--primary-dark); font-size: 18px; font-weight: 600; }
+        .search-hero p { margin: 0 0 16px 0; color: var(--text-light); font-size: 13px; }
         .search-input-wrap {
-            display: flex; gap: 10px; max-width: 600px; margin: auto;
+            display: flex; gap: 8px; max-width: 550px; margin: auto;
             flex-wrap: wrap;
         }
         .search-input-wrap input {
-            flex: 1; min-width: 200px; padding: 14px 18px;
-            border: 2px solid #cbd5e1; border-radius: 10px;
-            font-size: 16px; font-family: inherit; transition: 0.2s;
+            flex: 1; min-width: 200px; padding: 12px 16px;
+            border: 1px solid var(--border); border-radius: 8px;
+            font-size: 15px; font-family: inherit; transition: 0.2s;
         }
         .search-input-wrap input:focus { 
-            border-color: #667eea; outline: none; 
-            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+            border-color: var(--primary); outline: none; 
+            box-shadow: 0 0 0 3px var(--primary-light);
         }
         .search-btn {
-            padding: 14px 30px; background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white; border: none; border-radius: 10px;
-            font-weight: bold; cursor: pointer; font-size: 15px;
+            padding: 12px 24px; background: var(--primary);
+            color: white; border: none; border-radius: 8px;
+            font-weight: 600; cursor: pointer; font-size: 14px;
+            transition: 0.2s; font-family: inherit;
         }
+        .search-btn:hover { background: var(--primary-dark); }
         
         /* Status Message */
         .status-msg { 
-            padding: 12px; border-radius: 8px; text-align: center; 
-            font-weight: bold; display: none; margin-bottom: 20px;
+            padding: 10px 14px; border-radius: 8px; text-align: center; 
+            font-weight: 500; display: none; margin-bottom: 16px; font-size: 14px;
         }
-        .success { background: #dcfce3; color: #166534; display: block; }
+        .success { background: #dcfce7; color: #166534; display: block; }
         .error { background: #fee2e2; color: #991b1b; display: block; }
-        .info { background: #e0f2fe; color: #075985; display: block; }
+        .info { background: #dbeafe; color: #1e40af; display: block; }
         
         /* Contract Card */
         .contract-card {
-            display: none; background: white; border: 2px solid #e2e8f0;
-            border-radius: 14px; padding: 25px; margin-top: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: none; background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 10px; padding: 20px; margin-top: 16px;
+            box-shadow: var(--shadow);
         }
         .contract-card.active { display: block; }
         
         .card-header {
             display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;
+            border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px;
             flex-wrap: wrap; gap: 10px;
         }
         .card-header h3 { 
-            margin: 0; color: #1e293b; font-size: 18px;
+            margin: 0; color: var(--text); font-size: 16px; font-weight: 600;
             display: flex; align-items: center; gap: 8px;
         }
         .contract-badge {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white; padding: 4px 12px; border-radius: 20px;
-            font-size: 13px; font-weight: bold;
+            background: var(--primary);
+            color: white; padding: 4px 10px; border-radius: 6px;
+            font-size: 12px; font-weight: 600;
         }
         
         .fields-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 15px; margin-bottom: 20px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px; margin-bottom: 16px;
         }
         .field-group { display: flex; flex-direction: column; }
         .field-group label {
-            font-weight: bold; margin-bottom: 6px; font-size: 12px;
-            color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;
+            font-weight: 600; margin-bottom: 5px; font-size: 12px;
+            color: var(--text-light); text-transform: uppercase; letter-spacing: 0.3px;
         }
         .field-group input, .field-group select {
-            padding: 10px 12px; border: 1.5px solid #e2e8f0; 
-            border-radius: 8px; font-family: inherit; font-size: 14px;
+            padding: 9px 12px; border: 1px solid var(--border); 
+            border-radius: 6px; font-family: inherit; font-size: 14px;
             background: #f8fafc; transition: 0.2s;
         }
         .field-group input:focus, .field-group select:focus {
-            border-color: #667eea; outline: none; background: white;
-            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+            border-color: var(--primary); outline: none; background: white;
+            box-shadow: 0 0 0 3px var(--primary-light);
         }
         .field-group.highlight input {
-            background: #fef3c7; border-color: #f59e0b; font-weight: bold;
+            background: #fffbeb; border-color: #f59e0b; font-weight: 600;
         }
         
         .card-actions {
-            display: flex; gap: 10px; padding-top: 20px;
-            border-top: 2px solid #e2e8f0; flex-wrap: wrap;
+            display: flex; gap: 10px; padding-top: 16px;
+            border-top: 1px solid var(--border); flex-wrap: wrap;
         }
         .card-btn {
-            padding: 12px 24px; border: none; border-radius: 8px;
-            font-weight: bold; cursor: pointer; color: white;
-            font-size: 14px; transition: 0.2s;
+            padding: 10px 20px; border: none; border-radius: 6px;
+            font-weight: 600; cursor: pointer; color: white;
+            font-size: 14px; transition: 0.2s; font-family: inherit;
         }
-        .card-btn-save { background: linear-gradient(135deg, #10b981, #059669); flex: 1; min-width: 150px; }
-        .card-btn-close { background: #64748b; }
-        .card-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .card-btn-save { background: var(--success); flex: 1; min-width: 140px; }
+        .card-btn-save:hover { background: #047857; }
+        .card-btn-close { background: var(--secondary); }
+        .card-btn-close:hover { background: #475569; }
         
         /* Export Dropdown */
         .dropdown { position: relative; display: inline-block; }
         .dropdown-content {
             display: none; position: absolute; left: 0; top: 100%;
-            background: white; min-width: 160px; box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-            border-radius: 8px; z-index: 100; overflow: hidden; margin-top: 5px;
+            background: white; min-width: 180px; box-shadow: var(--shadow-lg);
+            border-radius: 8px; z-index: 100; overflow: hidden; margin-top: 4px;
+            border: 1px solid var(--border);
         }
         .dropdown.active .dropdown-content { display: block; }
         .dropdown-content button {
-            width: 100%; padding: 12px 16px; background: white; color: #1e293b;
+            width: 100%; padding: 10px 14px; background: white; color: var(--text);
             border: none; text-align: right; cursor: pointer; font-family: inherit;
             font-size: 14px; transition: 0.2s;
         }
-        .dropdown-content button:hover { background: #f1f5f9; }
+        .dropdown-content button:hover { background: var(--bg); }
         
         /* Empty state */
         .empty-state {
-            text-align: center; padding: 60px 20px; color: #94a3b8;
+            text-align: center; padding: 50px 20px; color: var(--text-light);
         }
-        .empty-state .icon { font-size: 60px; margin-bottom: 15px; }
+        .empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.6; }
+        .empty-state h3 { margin: 0 0 8px 0; color: var(--text); font-size: 16px; }
+        .empty-state p { margin: 0; font-size: 13px; }
         
         @media (max-width: 600px) {
-            body { padding: 10px; }
-            .container { padding: 20px; }
-            .search-hero { padding: 20px; }
+            body { padding: 0; }
+            .container { margin: 12px; padding: 16px; border-radius: 10px; }
+            .search-hero { padding: 18px; }
             .fields-grid { grid-template-columns: 1fr; }
+            .logo-header { padding: 10px 16px; }
+            .logo-img { height: 36px; }
         }
     </style>
 </head>
 <body>
 
+<!-- Logo Header (Always Visible) -->
+<div class="logo-header">
+    <!-- 🔧 ضع رابط شعارك هنا -->
+    <img src="https://via.placeholder.com/150x40/1e40af/ffffff?text=SMARYAD" alt="SMARYAD Logo" class="logo-img">
+    <span class="logo-text">SMARYAD</span>
+</div>
+
 <!-- Login -->
 <div id="loginScreen">
-    <h2>🔒 نظام إدارة العقود</h2>
+    <div class="logo-wrapper">
+        <img src="https://via.placeholder.com/150x50/1e40af/ffffff?text=SMARYAD" alt="SMARYAD" class="logo-img">
+    </div>
+    <h2>نظام إدارة العقود</h2>
     <p>الرجاء إدخال كلمة المرور للدخول إلى النظام</p>
     <input type="password" id="pinInput" placeholder="كلمة المرور..." onkeypress="if(event.key==='Enter') login()">
-    <button onclick="login()">🔓 دخول</button>
+    <button onclick="login()">دخول</button>
 </div>
 
 <!-- Main App -->
 <div class="container" id="mainApp">
     <div class="app-header">
-        <h1>📋 نظام إدارة العقود</h1>
+        <h1>إدارة العقود</h1>
         <div class="header-actions">
-            <button class="header-btn btn-new" onclick="openNewContract()">➕ عقد جديد</button>
+            <button class="header-btn btn-new" onclick="openNewContract()">➕ جديد</button>
             <div class="dropdown" id="exportDropdown">
-                <button class="header-btn btn-export" onclick="toggleDropdown('exportDropdown')">⬇️ تنزيل السجل</button>
+                <button class="header-btn btn-export" onclick="toggleDropdown('exportDropdown')">⬇️ تنزيل</button>
                 <div class="dropdown-content">
-                    <button onclick="exportFile('xlsx')">📊 تنزيل Excel (.xlsx)</button>
-                    <button onclick="exportFile('csv')">📄 تنزيل CSV (.csv)</button>
+                    <button onclick="exportFile('xlsx')">📊 Excel (.xlsx)</button>
+                    <button onclick="exportFile('csv')">📄 CSV (.csv)</button>
                 </div>
             </div>
-            <button class="header-btn btn-upload" onclick="document.getElementById('fileInput').click()">📂 رفع إكسل</button>
+            <button class="header-btn btn-upload" onclick="document.getElementById('fileInput').click()">📂 رفع</button>
             <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display: none;">
             <button class="header-btn btn-logout" onclick="logout()">🚪 خروج</button>
         </div>
@@ -216,10 +287,10 @@
     <!-- Search Hero -->
     <div class="search-hero">
         <h2>🔍 البحث عن عقد</h2>
-        <p>ابحث باستخدام: <strong>رقم العقد</strong> أو <strong>رقم العميل</strong> أو <strong>رقم الهوية</strong></p>
+        <p>ابحث باستخدام: رقم العقد • رقم العميل • رقم الهوية</p>
         <div class="search-input-wrap">
             <input type="text" id="searchInput" placeholder="أدخل رقم البحث..." onkeypress="if(event.key==='Enter') searchContract()">
-            <button class="search-btn" onclick="searchContract()">🔍 بحث</button>
+            <button class="search-btn" onclick="searchContract()">بحث</button>
         </div>
     </div>
 
@@ -230,7 +301,7 @@
         </div>
         <div class="fields-grid" id="formFields"></div>
         <div class="card-actions">
-            <button class="card-btn card-btn-save" id="saveBtn" onclick="saveContract()">💾 حفظ التعديلات</button>
+            <button class="card-btn card-btn-save" id="saveBtn" onclick="saveContract()">💾 حفظ</button>
             <button class="card-btn card-btn-close" onclick="closeCard()">✖️ إغلاق</button>
         </div>
     </div>
@@ -239,11 +310,12 @@
     <div class="empty-state" id="emptyState">
         <div class="icon">📭</div>
         <h3>ابدأ بالبحث عن عقد</h3>
-        <p>أو قم برفع ملف إكسل لمزامنة البيانات القديمة</p>
+        <p>أو قم برفع ملف إكسل لمزامنة البيانات</p>
     </div>
 </div>
 
 <script>
+    // ⚠️ مهم: تأكد من أن هذا الرابط هو آخر إصدار منشور من Apps Script
     const API_URL = 'https://script.google.com/macros/s/AKfycbxg_MDS99kGocB2KLrfGKNUsA_H9wVmfrqXMN-QjF62tSoZLaUeXOg2Q_CIc5_PiYc/exec';
     let STAFF_PIN = sessionStorage.getItem('staff_pin');
     let currentContract = null;
@@ -267,7 +339,7 @@
         { key: 'agent', label: 'الوكيل', type: 'text' },
         { key: 'writer', label: 'كاتب العقد', type: 'text' },
         { key: 'contractType', label: 'التعاقد', type: 'text' },
-        { key: 'id', label: 'الرقم التسلسلي (#)', type: 'text' }
+        { key: 'id', label: '#', type: 'text' }
     ];
 
     const SYSTEM_STATUSES = ['جديد', 'قيد المعالجة', 'تم الاصدار', 'تم الوصول', 'بدء العقد', 'مكتمل', 'ملغي'];
@@ -339,39 +411,45 @@
         options.body = JSON.stringify(payload || { fetchFresh: true });
         
         const response = await fetch(url, options);
-        const json = await response.json();
         
-        if (!json.success) {
-            if (json.error.includes("غير مصرح")) { logout(); }
-            throw new Error(json.error);
+        // 🔧 معالجة خطأ "doGet not found"
+        const text = await response.text();
+        if (text.includes('Không tìm thấy hàm tập lệnh: doGet') || text.includes('Cannot find function doGet')) {
+            throw new Error('⚠️ خطأ في النشر: يرجى إعادة نشر السكربت بنسخة جديدة');
         }
-        return json.data;
+        
+        try {
+            const json = JSON.parse(text);
+            if (!json.success) {
+                if (json.error.includes("غير مصرح")) { logout(); }
+                throw new Error(json.error);
+            }
+            return json.data;
+        } catch (e) {
+            throw new Error('استجابة غير صالحة من السيرفر');
+        }
     }
 
-function cleanAmountValue(val) {
-    if (val === null || val === undefined || val === '') return '';
-    let str = String(val).trim();
-    
-    // 🔧 الإصلاح الجذري: إذا جاءت القيمة كتاريخ ISO، نستخرج "السنة" كسعر
-    if (str.includes('T') && str.includes('-')) {
-        try {
-            const d = new Date(str);
-            if (!isNaN(d.getTime())) {
-                const year = d.getUTCFullYear();
-                // إذا كانت السنة منطقية كسعر (بين 1000 و 99999)
-                if (year >= 1000 && year <= 99999) {
-                    return year.toString();
+    function cleanAmountValue(val) {
+        if (val === null || val === undefined || val === '') return '';
+        let str = String(val).trim();
+        
+        if (str.includes('T') && str.includes('-')) {
+            try {
+                const d = new Date(str);
+                if (!isNaN(d.getTime())) {
+                    const year = d.getUTCFullYear();
+                    if (year >= 1000 && year <= 99999) {
+                        return year.toString();
+                    }
                 }
-            }
-        } catch (e) {}
+            } catch (e) {}
+        }
+        
+        const num = parseFloat(str.replace(/[^\d.-]/g, ''));
+        if (!isNaN(num)) return num.toFixed(2);
+        return str;
     }
-    
-    // للأرقام العادية
-    const num = parseFloat(str.replace(/[^\d.-]/g, ''));
-    if (!isNaN(num)) return num.toFixed(2);
-    
-    return str;
-}
     
     function formatDateForInput(val) {
         if (!val) return '';
@@ -403,16 +481,15 @@ function cleanAmountValue(val) {
                 if (value && !SYSTEM_STATUSES.includes(value)) {
                     opts += `<option value="${value}" selected>${value}</option>`;
                 }
-              inputHtml = `<select id="edit_${field.key}">${opts}</select>`;
-} else if (field.type === 'date') {
-    inputHtml = `<input type="date" id="edit_${field.key}" value="${formatDateForInput(value)}">`;
-} else if (field.type === 'number') {
-    // 🔧 تنظيف قيمة السعر لمنع ظهور رموز التاريخ (ISO Dates)
-    const cleanValue = cleanAmountValue(value);
-    inputHtml = `<input type="number" step="0.01" id="edit_${field.key}" value="${cleanValue}">`;
-} else {
-    inputHtml = `<input type="text" id="edit_${field.key}" value="${value}">`;
-}
+                inputHtml = `<select id="edit_${field.key}">${opts}</select>`;
+            } else if (field.type === 'date') {
+                inputHtml = `<input type="date" id="edit_${field.key}" value="${formatDateForInput(value)}">`;
+            } else if (field.type === 'number') {
+                const cleanValue = cleanAmountValue(value);
+                inputHtml = `<input type="number" step="0.01" id="edit_${field.key}" value="${cleanValue}">`;
+            } else {
+                inputHtml = `<input type="text" id="edit_${field.key}" value="${value}">`;
+            }
             
             div.innerHTML = `<label>${field.label}${field.required ? ' *' : ''}</label>${inputHtml}`;
             container.appendChild(div);
@@ -490,7 +567,6 @@ function cleanAmountValue(val) {
         
         try {
             if (isNewContract) {
-                // إضافة عقد جديد عبر bulkImport
                 await apiCall('bulkImport', { contracts: [payload] });
                 setStatus('✅ تمت إضافة العقد بنجاح', 'success');
             } else {
