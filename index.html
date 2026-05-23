@@ -352,22 +352,21 @@ function cleanAmountValue(val) {
     if (val === null || val === undefined || val === '') return '';
     let str = String(val).trim();
     
-    // 🔧 إصلاح: إذا جاءت القيمة كتاريخ ISO (بسبب خطأ تنسيق في Sheets)
-    // نحولها إلى الرقم الأصلي (Excel Serial Number)
-    if (str.includes('T') && str.includes('-') && str.length > 15) {
+    // 🔧 الإصلاح الجذري: إذا جاءت القيمة كتاريخ ISO، نستخرج "السنة" كسعر
+    if (str.includes('T') && str.includes('-')) {
         try {
             const d = new Date(str);
             if (!isNaN(d.getTime())) {
-                const excelEpoch = new Date(Date.UTC(1899, 11, 30));
-                const serial = (d.getTime() - excelEpoch.getTime()) / 86400000;
-                if (serial > 100 && serial < 100000) {
-                    return serial.toFixed(2);
+                const year = d.getUTCFullYear();
+                // إذا كانت السنة منطقية كسعر (بين 1000 و 99999)
+                if (year >= 1000 && year <= 99999) {
+                    return year.toString();
                 }
             }
         } catch (e) {}
     }
     
-    // إذا كانت رقماً عادياً
+    // للأرقام العادية
     const num = parseFloat(str.replace(/[^\d.-]/g, ''));
     if (!isNaN(num)) return num.toFixed(2);
     
