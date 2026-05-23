@@ -232,26 +232,58 @@
 
     function backToMapping() { document.getElementById('previewStep').style.display = 'none'; document.getElementById('mappingStep').style.display = 'block'; }
 
-    // ✅ Updated parseExcelCell
-    function parseExcelCell(value, type) {
-        if (value === null || value === undefined || value === "") return "";
-        if (type === 'number') {
-            let str = String(value).trim();
-            str = str.replace(/\./g, '').replace(/,/g, '.');
-            let num = parseFloat(str);
-            return isNaN(num) ? 0 : num;
+// ✅ CORRECTED: Smart Excel cell parsing
+function parseExcelCell(value, type) {
+    if (value === null || value === undefined || value === "") return "";
+    
+    if (type === 'number') {
+        let str = String(value).trim();
+        
+        // Excel might store as number directly
+        if (typeof value === 'number') {
+            return value;
         }
-        if (type === 'date') {
-            if (typeof value === 'number') {
-                const dDate = new Date(Math.round((value - 25569) * 86400 * 1000));
-                return dDate.toISOString().split('T')[0];
-            }
-            const strVal = String(value).trim();
-            const d = new Date(strVal);
-            return isNaN(d.getTime()) ? strVal : d.toISOString().split('T')[0];
+        
+        // ✅ SMART DETECTION for string numbers
+        const dots = (str.match(/\./g) || []).length;
+        const commas = (str.match(/,/g) || []).length;
+        
+        let num;
+        
+        if (dots === 1 && commas === 0) {
+            // Decimal separator: 4601.15
+            num = parseFloat(str);
+        } else if (dots === 0 && commas === 1) {
+            // European decimal: 4601,15
+            num = parseFloat(str.replace(',', '.'));
+        } else if (dots > 0 && commas === 1) {
+            // European format: 1.234,56
+            str = str.replace(/\./g, '').replace(',', '.');
+            num = parseFloat(str);
+        } else if (dots === 1 && commas > 0) {
+            // US/Arabic format: 1,234.56
+            str = str.replace(/,/g, '');
+            num = parseFloat(str);
+        } else {
+            // Plain number or remove all non-numeric
+            num = parseFloat(str.replace(/[^\d.-]/g, ''));
         }
-        return String(value).trim();
+        
+        return isNaN(num) ? 0 : num;
     }
+    
+    if (type === 'date') {
+        if (typeof value === 'number') {
+            const dDate = new Date(Math.round((value - 25569) * 86400 * 1000));
+            return dDate.toISOString().split('T')[0];
+        }
+        const strVal = String(value).trim();
+        const d = new Date(strVal);
+        return isNaN(d.getTime()) ? strVal : d.toISOString().split('T')[0];
+    }
+    
+    return String(value).trim();
+}
 
     async function performImport() {
         const btn = document.getElementById('importBtn');
