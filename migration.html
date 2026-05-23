@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>معالج الترحيل الذكي - SMARYAD</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: Tahoma, 'Segoe UI', Arial, sans-serif; 
+            background: #f8fafc; padding: 20px; color: #1e293b;
+        }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        h1 { color: #1e40af; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px; }
+        .step { background: #f1f5f9; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-right: 4px solid #1e40af; }
+        .step-title { font-weight: bold; color: #1e40af; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .step-num { background: #1e40af; color: white; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; }
+        
+        .upload-area { border: 2px dashed #cbd5e1; padding: 30px; text-align: center; border-radius: 10px; cursor: pointer; transition: 0.2s; }
+        .upload-area:hover { border-color: #1e40af; background: #f0f9ff; }
+        .upload-area.dragover { border-color: #10b981; background: #ecfdf5; }
+        
+        .file-list { margin-top: 15px; }
+        .file-item { background: white; padding: 10px 15px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; }
+        .file-remove { background: #ef4444; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
+        
+        .mapping-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .mapping-table th, .mapping-table td { padding: 10px; text-align: right; border-bottom: 1px solid #e2e8f0; }
+        .mapping-table th { background: #f1f5f9; color: #1e40af; font-weight: 600; }
+        .mapping-table select { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; }
+        .mapping-table .matched { background: #dcfce7; }
+        .mapping-table .unmatched { background: #fef3c7; }
+        
+        .preview-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+        .preview-table th, .preview-table td { padding: 8px; border: 1px solid #e2e8f0; text-align: right; }
+        .preview-table th { background: #1e40af; color: white; }
+        .preview-table tr:nth-child(even) { background: #f8fafc; }
+        
+        button.primary { background: #1e40af; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; }
+        button.primary:hover { background: #1e3a8a; }
+        button.primary:disabled { background: #94a3b8; cursor: not-allowed; }
+        button.secondary { background: #64748b; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; }
+        
+        .status { padding: 12px; border-radius: 6px; margin: 15px 0; display: none; }
+        .status.success { background: #dcfce7; color: #166534; display: block; }
+        .status.error { background: #fee2e2; color: #991b1b; display: block; }
+        .status.info { background: #dbeafe; color: #1e40af; display: block; }
+        
+        .summary { background: linear-gradient(135deg, #dbeafe, #e0f2fe); padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .summary-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #cbd5e1; }
+        .summary-item:last-child { border: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🚀 معالج الترحيل الذكي - SMARYAD</h1>
+    <p style="color: #64748b; margin-bottom: 20px;">ارفع عدة ملفات إكسل بتنسيقات مختلفة، والنظام سيقوم بدمجها وجمعها تلقائياً مع ضمان عدم فقدان أي بيانات.</p>
+
+    <div class="step">
+        <div class="step-title"><span class="step-num">1</span> رفع الملفات</div>
+        <div class="upload-area" id="uploadArea">
+            <p style="font-size: 18px; margin-bottom: 8px;">📂 اسحب وأفلت الملفات هنا</p>
+            <p style="color: #64748b;">أو اضغط لاختيار ملفات Excel/CSV متعددة</p>
+            <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" multiple style="display:none;">
+        </div>
+        <div class="file-list" id="fileList"></div>
+    </div>
+
+    <div class="step" id="mappingStep" style="display:none;">
+        <div class="step-title"><span class="step-num">2</span> مطابقة الأعمدة</div>
+        <p style="margin-bottom: 10px; color: #64748b;">النظام اكتشف الأعمدة التالية. راجع المطابقة (🟢 = مطابق تلقائياً، 🟡 = غير مطابق):</p>
+        <table class="mapping-table" id="mappingTable"></table>
+        <button class="secondary" style="margin-top: 15px;" onclick="proceedToPreview()">متابعة إلى المعاينة ←</button>
+    </div>
+
+    <div class="step" id="previewStep" style="display:none;">
+        <div class="step-title"><span class="step-num">3</span> معاينة البيانات</div>
+        <div class="summary" id="summary"></div>
+        <div style="max-height: 400px; overflow: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
+            <table class="preview-table" id="previewTable"></table>
+        </div>
+        <div style="margin-top: 15px; display: flex; gap: 10px;">
+            <button class="secondary" onclick="backToMapping()">← رجوع</button>
+            <button class="primary" id="importBtn" onclick="performImport()">✅ تأكيد الترحيل إلى النظام</button>
+        </div>
+    </div>
+
+    <div class="status" id="status"></div>
+</div>
+
+<script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxg_MDS99kGocB2KLrfGKNUsA_H9wVmfrqXMN-QjF62tSoZLaUeXOg2Q_CIc5_PiYc/exec';
+    const STAFF_PIN = sessionStorage.getItem('staff_pin') || prompt('أدخل كلمة المرور:');
+
+    // أعمدة النظام النهائية + البدائل الممكنة (Aliases)
+    const SYSTEM_FIELDS = [
+        { key: 'contractNumber', label: 'رقم العقد', aliases: ['رقم العقد', 'رقم عقد', 'contract no', 'contract number'] },
+        { key: 'issueNumber', label: 'رقم التأشيرة', aliases: ['رقم التأشيرة', 'رقم التاشيرة', 'رقم الصادر', 'visa'] },
+        { key: 'employerId', label: 'رقم الهوية', aliases: ['رقم الهوية', 'هوية العميل', 'هوية صاحب العمل'] },
+        { key: 'clientName', label: 'اسم العميل', aliases: ['اسم العميل', 'العميل', 'إسم العميل'] },
+        { key: 'workerName', label: 'اسم الخادمة', aliases: ['اسم الخادمة', 'اسم العاملة', 'اسم العامله', 'الخادمة'] },
+        { key: 'nationality', label: 'الدولة', aliases: ['الدولة', 'الجنسية', 'country'] },
+        { key: 'profession', label: 'المهنة', aliases: ['المهنة', 'مهنة', 'المهنه'] },
+        { key: 'amountDue', label: 'السعر المعتمد', aliases: ['السعر المعتمد', 'المبلغ المستحق', 'السعر', 'المبلغ', 'سعر المعتمد على العقد'] },
+        { key: 'duration', label: 'مدة العقد', aliases: ['مدة العقد', 'مدة الاستقدام', 'المدة'] },
+        { key: 'applicationDate', label: 'تاريخ التقديم', aliases: ['تاريخ التقديم', 'تاريخ العقد'] },
+        { key: 'arrivalDate', label: 'تاريخ الوصول', aliases: ['تاريخ الوصول', 'تااريخ الوصول', 'تاريخ اسم الخادمة'] },
+        { key: 'contractStatus', label: 'حالة العقد', aliases: ['حالة العقد', 'الحالة'] },
+        { key: 'month', label: 'الشهر', aliases: ['الشهر', 'month', 'تاريخ العقد الشهر'] },
+        { key: 'customerId', label: 'رقم العميل', aliases: ['رقم العميل'] },
+        { key: 'agent', label: 'الوكيل', aliases: ['الوكيل', 'وكيل'] },
+        { key: 'writer', label: 'كاتب العقد', aliases: ['كاتب العقد', 'الكاتب'] },
+        { key: 'contractType', label: 'التعاقد', aliases: ['التعاقد', 'نوع العقد'] },
+        { key: 'id', label: '#', aliases: ['#', 'م', 'ا', 'رقم تسلسلي'] }
+    ];
+
+    let uploadedFiles = [];
+    let fileSheets = []; // تخزين بيانات كل ملف
+    let currentMapping = {};
+    let mergedData = [];
+
+    // ========== رفع الملفات ==========
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+
+    uploadArea.addEventListener('click', () => fileInput.click());
+    uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+    uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+    });
+    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+    async function handleFiles(files) {
+        setStatus('جاري قراءة الملفات...', 'info');
+        for (const file of files) {
+            try {
+                const data = await file.arrayBuffer();
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
+                
+                if (rows.length < 2) { showStatus(`الملف ${file.name} فارغ`, 'error'); continue; }
+                
+                fileSheets.push({
+                    name: file.name,
+                    headers: rows[0].map(h => String(h || '').trim()),
+                    rows: rows.slice(1).filter(r => r.some(cell => cell !== '' && cell !== null))
+                });
+            } catch (err) {
+                showStatus(`خطأ في قراءة ${file.name}: ${err.message}`, 'error');
+            }
+        }
+        renderFileList();
+        showStatus(`تم تحميل ${fileSheets.length} ملف بنجاح`, 'success');
+    }
+
+    function renderFileList() {
+        const list = document.getElementById('fileList');
+        list.innerHTML = fileSheets.map((f, i) => `
+            <div class="file-item">
+                <span>📄 <strong>${f.name}</strong> (${f.rows.length} سجل، ${f.headers.length} عمود)</span>
+                <button class="file-remove" onclick="removeFile(${i})">إزالة</button>
+            </div>
+        `).join('');
+        if (fileSheets.length > 0) {
+            document.getElementById('mappingStep').style.display = 'block';
+            renderMapping();
+        }
+    }
+
+    function removeFile(idx) {
+        fileSheets.splice(idx, 1);
+        renderFileList();
+        if (fileSheets.length === 0) document.getElementById('mappingStep').style.display = 'none';
+    }
+
+    // ========== المطابقة التلقائية ==========
+    function autoDetectMapping() {
+        const mapping = {};
+        const allHeaders = [...new Set(fileSheets.flatMap(f => f.headers))];
+        
+        SYSTEM_FIELDS.forEach(sysField => {
+            let bestMatch = null;
+            for (const alias of sysField.aliases) {
+                const found = allHeaders.find(h => h.toLowerCase() === alias.toLowerCase() || h.includes(alias));
+                if (found) { bestMatch = found; break; }
+            }
+            mapping[sysField.key] = bestMatch || '';
+        });
+        return mapping;
+    }
+
+    function renderMapping() {
+        currentMapping = autoDetectMapping();
+        const allHeaders = [...new Set(fileSheets.flatMap(f => f.headers))];
+        
+        const table = document.getElementById('mappingTable');
+        table.innerHTML = `
+            <tr><th>عمود النظام</th><th>العمود المقابل من الملف</th><th>الحالة</th></tr>
+            ${SYSTEM_FIELDS.map(sysField => {
+                const selected = currentMapping[sysField.key];
+                const matched = selected ? 'matched' : 'unmatched';
+                const status = selected ? '✅' : '⚠️';
+                return `
+                    <tr class="${matched}">
+                        <td><strong>${sysField.label}</strong></td>
+                        <td>
+                            <select onchange="updateMapping('${sysField.key}', this.value)">
+                                <option value="">— لا يوجد —</option>
+                                ${allHeaders.map(h => `<option value="${h}" ${selected === h ? 'selected' : ''}>${h}</option>`).join('')}
+                            </select>
+                        </td>
+                        <td>${status}</td>
+                    </tr>
+                `;
+            }).join('')}
+        `;
+    }
+
+    function updateMapping(key, value) {
+        currentMapping[key] = value;
+    }
+
+    // ========== المعاينة ==========
+    function proceedToPreview() {
+        mergedData = [];
+        const missingRequired = !currentMapping.contractNumber;
+        if (missingRequired) {
+            showStatus('⚠️ يجب مطابقة "رقم العقد" على الأقل!', 'error');
+            return;
+        }
+
+        fileSheets.forEach(file => {
+            const headerIndex = {};
+            Object.keys(currentMapping).forEach(key => {
+                const colName = currentMapping[key];
+                headerIndex[key] = file.headers.indexOf(colName);
+            });
+
+            file.rows.forEach(row => {
+                const record = {};
+                Object.keys(currentMapping).forEach(key => {
+                    const idx = headerIndex[key];
+                    record[key] = idx !== -1 ? (row[idx] || '') : '';
+                });
+                if (record.contractNumber) mergedData.push(record);
+            });
+        });
+
+        renderPreview();
+    }
+
+    function renderPreview() {
+        document.getElementById('mappingStep').style.display = 'none';
+        document.getElementById('previewStep').style.display = 'block';
+
+        // الملخص
+        const uniqueContracts = new Set(mergedData.map(r => r.contractNumber)).size;
+        document.getElementById('summary').innerHTML = `
+            <div class="summary-item"><span>عدد السجلات الإجمالي:</span><strong>${mergedData.length}</strong></div>
+            <div class="summary-item"><span>عدد العقود الفريدة:</span><strong>${uniqueContracts}</strong></div>
+            <div class="summary-item"><span>عدد الملفات المعالجة:</span><strong>${fileSheets.length}</strong></div>
+        `;
+
+        // جدول المعاينة (أول 20 سجل)
+        const displayFields = SYSTEM_FIELDS.filter(f => currentMapping[f.key]);
+        const preview = mergedData.slice(0, 20);
+        
+        document.getElementById('previewTable').innerHTML = `
+            <thead>
+                <tr>${displayFields.map(f => `<th>${f.label}</th>`).join('')}</tr>
+            </thead>
+            <tbody>
+                ${preview.map(r => `<tr>${displayFields.map(f => `<td>${r[f.key] || '—'}</td>`).join('')}</tr>`).join('')}
+            </tbody>
+        `;
+    }
+
+    function backToMapping() {
+        document.getElementById('previewStep').style.display = 'none';
+        document.getElementById('mappingStep').style.display = 'block';
+    }
+
+    // ========== الترحيل الفعلي ==========
+    async function performImport() {
+        const btn = document.getElementById('importBtn');
+        btn.disabled = true;
+        btn.textContent = '⏳ جاري الترحيل...';
+        setStatus('جاري إرسال البيانات إلى النظام...', 'info');
+
+        try {
+            const url = `${API_URL}?action=bulkImport&token=${encodeURIComponent(STAFF_PIN)}`;
+            const res = await fetch(url, {
+                method: 'POST',
+                cache: 'no-store',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ contracts: mergedData })
+            });
+            const json = await res.json();
+            
+            if (!json.success) throw new Error(json.error);
+            
+            const r = json.data;
+            showStatus(`✅ اكتمل الترحيل بنجاح! تمت إضافة: ${r.added} | تحديث: ${r.updated} | تخطي: ${r.skipped}`, 'success');
+            
+            setTimeout(() => {
+                if (confirm('تم الترحيل بنجاح. هل تريد العودة للصفحة الرئيسية؟')) {
+                    window.location.href = 'index.html';
+                }
+            }, 2000);
+        } catch (err) {
+            showStatus('❌ فشل الترحيل: ' + err.message, 'error');
+            btn.disabled = false;
+            btn.textContent = '✅ تأكيد الترحيل إلى النظام';
+        }
+    }
+
+    function setStatus(msg, type) { showStatus(msg, type); }
+    function showStatus(msg, type) {
+        const el = document.getElementById('status');
+        el.innerText = msg;
+        el.className = `status ${type}`;
+    }
+</script>
+</body>
+</html>
