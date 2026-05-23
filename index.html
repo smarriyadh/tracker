@@ -348,6 +348,32 @@
         return json.data;
     }
 
+function cleanAmountValue(val) {
+    if (val === null || val === undefined || val === '') return '';
+    let str = String(val).trim();
+    
+    // 🔧 إصلاح: إذا جاءت القيمة كتاريخ ISO (بسبب خطأ تنسيق في Sheets)
+    // نحولها إلى الرقم الأصلي (Excel Serial Number)
+    if (str.includes('T') && str.includes('-') && str.length > 15) {
+        try {
+            const d = new Date(str);
+            if (!isNaN(d.getTime())) {
+                const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+                const serial = (d.getTime() - excelEpoch.getTime()) / 86400000;
+                if (serial > 100 && serial < 100000) {
+                    return serial.toFixed(2);
+                }
+            }
+        } catch (e) {}
+    }
+    
+    // إذا كانت رقماً عادياً
+    const num = parseFloat(str.replace(/[^\d.-]/g, ''));
+    if (!isNaN(num)) return num.toFixed(2);
+    
+    return str;
+}
+    
     function formatDateForInput(val) {
         if (!val) return '';
         let str = String(val).trim();
@@ -378,14 +404,16 @@
                 if (value && !SYSTEM_STATUSES.includes(value)) {
                     opts += `<option value="${value}" selected>${value}</option>`;
                 }
-                inputHtml = `<select id="edit_${field.key}">${opts}</select>`;
-            } else if (field.type === 'date') {
-                inputHtml = `<input type="date" id="edit_${field.key}" value="${formatDateForInput(value)}">`;
-            } else if (field.type === 'number') {
-                inputHtml = `<input type="number" step="0.01" id="edit_${field.key}" value="${value}">`;
-            } else {
-                inputHtml = `<input type="text" id="edit_${field.key}" value="${value}">`;
-            }
+              inputHtml = `<select id="edit_${field.key}">${opts}</select>`;
+} else if (field.type === 'date') {
+    inputHtml = `<input type="date" id="edit_${field.key}" value="${formatDateForInput(value)}">`;
+} else if (field.type === 'number') {
+    // 🔧 تنظيف قيمة السعر لمنع ظهور رموز التاريخ (ISO Dates)
+    const cleanValue = cleanAmountValue(value);
+    inputHtml = `<input type="number" step="0.01" id="edit_${field.key}" value="${cleanValue}">`;
+} else {
+    inputHtml = `<input type="text" id="edit_${field.key}" value="${value}">`;
+}
             
             div.innerHTML = `<label>${field.label}${field.required ? ' *' : ''}</label>${inputHtml}`;
             container.appendChild(div);
