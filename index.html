@@ -181,31 +181,27 @@
     let currentContract = null;
     let isNewContract = false;
 
-    // ✅ Updated FIELD_CONFIG - Removed # and month, updated labels
     const FIELD_CONFIG = [
         { key: 'contractNumber', label: 'رقم العقد', type: 'text', highlight: true, required: true },
         { key: 'issueNumber', label: 'رقم التأشيرة', type: 'text' },
         { key: 'customerId', label: 'رقم العميل', type: 'text', highlight: true },
         { key: 'employerId', label: 'رقم الهوية', type: 'text', highlight: true },
         { key: 'clientName', label: 'اسم العميل', type: 'text' },
-        { key: 'workerName', label: 'اسم العاملـ/ـه', type: 'text' }, // ✅ Changed from اسم الخادمة
+        { key: 'workerName', label: 'اسم العاملـ/ـه', type: 'text' },
         { key: 'nationality', label: 'الدولة', type: 'text' },
         { key: 'profession', label: 'المهنة', type: 'text' },
         { key: 'amountDue', label: 'السعر المعتمد', type: 'number', highlight: true },
         { key: 'duration', label: 'مدة العقد', type: 'text' },
         { key: 'applicationDate', label: 'تاريخ التقديم', type: 'date', highlight: true },
         { key: 'arrivalDate', label: 'تاريخ الوصول', type: 'date' },
-        // ✅ Removed: month field
         { key: 'contractStatus', label: 'حالة العقد', type: 'select' },
         { key: 'agent', label: 'الوكيل', type: 'text' },
         { key: 'writer', label: 'كاتب العقد', type: 'text' },
-        { key: 'contractType', label: 'نوع التعاقد', type: 'text' } // ✅ Changed from التعاقد
-        // ✅ Removed: id field (#)
+        { key: 'contractType', label: 'نوع التعاقد', type: 'text' }
     ];
 
     const SYSTEM_STATUSES = ['جديد', 'قيد المعالجة', 'تم الاصدار', 'تم الوصول', 'بدء العقد', 'مكتمل', 'ملغي'];
 
-    // ✅ Updated HEADER_CONFIG - Removed # and month
     const HEADER_CONFIG = {
         clientName: { type: 'string', aliases: ['اسم العميل', 'العميل', 'إسم العميل'] },
         contractNumber: { type: 'string', aliases: ['رقم العقد', 'رقم_العقد', 'contract no'] },
@@ -287,72 +283,52 @@
         }
     }
 
-// ✅ CORRECTED: Smart price parsing
-function cleanAmountValue(val) {
-    if (val === null || val === undefined || val === '') return '';
-    let str = String(val).trim();
-    
-    // Handle ISO dates converted to prices
-    if (str.includes('T') && str.includes('-')) {
-        try {
-            const d = new Date(str);
-            if (!isNaN(d.getTime())) {
-                const year = d.getUTCFullYear();
-                if (year >= 1000 && year <= 99999) return year.toString();
-            }
-        } catch (e) {}
+    // ✅ ENHANCED: Smart price parsing with auto-correction
+    function cleanAmountValue(val) {
+        if (val === null || val === undefined || val === '') return '';
+        let str = String(val).trim();
+        
+        if (str.includes('T') && str.includes('-')) {
+            try {
+                const d = new Date(str);
+                if (!isNaN(d.getTime())) {
+                    const year = d.getUTCFullYear();
+                    if (year >= 1000 && year <= 99999) return year.toString();
+                }
+            } catch (e) {}
+        }
+        
+        const dots = (str.match(/\./g) || []).length;
+        const commas = (str.match(/,/g) || []).length;
+        
+        let num;
+        
+        if (dots === 1 && commas === 0) {
+            num = parseFloat(str);
+        } else if (dots === 0 && commas === 1) {
+            num = parseFloat(str.replace(',', '.'));
+        } else if (dots > 0 && commas === 1) {
+            str = str.replace(/\./g, '').replace(',', '.');
+            num = parseFloat(str);
+        } else if (dots === 1 && commas > 0) {
+            str = str.replace(/,/g, '');
+            num = parseFloat(str);
+        } else {
+            num = parseFloat(str.replace(/,/g, '.'));
+        }
+        
+        if (!isNaN(num) && num > 0 && num < 100) {
+            num = num * 1000;
+        }
+        
+        if (!isNaN(num) && num > 0) {
+            return num.toLocaleString('en-US', { 
+                minimumFractionDigits: 2, 
+                maximumFractionDigits: 2 
+            });
+        }
+        return str;
     }
-    
-// ✅ ENHANCED: Smart price parsing with auto-correction
-function cleanAmountValue(val) {
-    if (val === null || val === undefined || val === '') return '';
-    let str = String(val).trim();
-    
-    // Handle ISO dates converted to prices
-    if (str.includes('T') && str.includes('-')) {
-        try {
-            const d = new Date(str);
-            if (!isNaN(d.getTime())) {
-                const year = d.getUTCFullYear();
-                if (year >= 1000 && year <= 99999) return year.toString();
-            }
-        } catch (e) {}
-    }
-    
-    // Count dots and commas to determine format
-    const dots = (str.match(/\./g) || []).length;
-    const commas = (str.match(/,/g) || []).length;
-    
-    let num;
-    
-    if (dots === 1 && commas === 0) {
-        num = parseFloat(str);
-    } else if (dots === 0 && commas === 1) {
-        num = parseFloat(str.replace(',', '.'));
-    } else if (dots > 0 && commas === 1) {
-        str = str.replace(/\./g, '').replace(',', '.');
-        num = parseFloat(str);
-    } else if (dots === 1 && commas > 0) {
-        str = str.replace(/,/g, '');
-        num = parseFloat(str);
-    } else {
-        num = parseFloat(str.replace(/,/g, '.'));
-    }
-    
-    // 🔧 AUTO-CORRECTION: If value is suspiciously small (< 100), multiply by 1000
-    // Recruitment contracts typically range from 3,000 to 20,000 SAR
-    if (!isNaN(num) && num > 0 && num < 100) {
-        num = num * 1000;
-    }
-    
-    if (!isNaN(num) && num > 0) {
-        return num.toLocaleString('en-US', { 
-            minimumFractionDigits: 2, 
-            maximumFractionDigits: 2 
-        });
-    }
-    return str;
-}
     
     function formatDateForInput(val) {
         if (!val) return '';
@@ -377,7 +353,6 @@ function cleanAmountValue(val) {
             let inputHtml = '';
             const value = contract[field.key] || '';
             
-            // ✅ Check for missing dates and add red warning
             if (field.type === 'date') {
                 const isEmpty = !value || value === '';
                 if (isEmpty) {
@@ -410,24 +385,19 @@ function cleanAmountValue(val) {
         });
     }
 
-    // ✅ Format price input on blur
-// ✅ CORRECTED: Format price on blur
-function formatPriceInput(input) {
-    let val = input.value.trim();
-    if (!val) return;
-    
-    // Remove existing formatting
-    const cleanVal = val.replace(/,/g, '').replace(/\./g, '');
-    
-    // Try to parse as number
-    const num = parseFloat(cleanVal);
-    if (!isNaN(num)) {
-        input.value = num.toLocaleString('en-US', { 
-            minimumFractionDigits: 2, 
-            maximumFractionDigits: 2 
-        });
+    function formatPriceInput(input) {
+        let val = input.value.trim();
+        if (!val) return;
+        
+        const cleanVal = val.replace(/,/g, '').replace(/\./g, '');
+        const num = parseFloat(cleanVal);
+        if (!isNaN(num)) {
+            input.value = num.toLocaleString('en-US', { 
+                minimumFractionDigits: 2, 
+                maximumFractionDigits: 2 
+            });
+        }
     }
-}
 
     async function searchContract() {
         const searchId = document.getElementById('searchInput').value.trim();
@@ -480,41 +450,39 @@ function formatPriceInput(input) {
         isNewContract = false;
     }
 
-async function saveContract() {
-    const payload = { updatedBy: 'موظف النظام' };
-    FIELD_CONFIG.forEach(field => {
-        const el = document.getElementById(`edit_${field.key}`);
-        if (el) {
-            let val = el.value.trim();
-            // ✅ Convert formatted price back to RAW number
-            if (field.type === 'number') {
-                // Remove ALL formatting (commas and dots used as thousands)
-                val = val.replace(/,/g, '');
-                // Now parse the clean number
-                const num = parseFloat(val);
-                val = isNaN(num) ? 0 : num;
+    async function saveContract() {
+        const payload = { updatedBy: 'موظف النظام' };
+        FIELD_CONFIG.forEach(field => {
+            const el = document.getElementById(`edit_${field.key}`);
+            if (el) {
+                let val = el.value.trim();
+                if (field.type === 'number') {
+                    val = val.replace(/,/g, '');
+                    const num = parseFloat(val);
+                    val = isNaN(num) ? 0 : num;
+                }
+                payload[field.key] = val;
             }
-            payload[field.key] = val;
+        });
+        
+        if (!payload.contractNumber) { setStatus('❌ رقم العقد مطلوب', 'error'); return; }
+        
+        setStatus(isNewContract ? 'جاري إضافة العقد...' : 'جاري حفظ التعديلات...', 'info');
+        
+        try {
+            if (isNewContract) {
+                await apiCall('bulkImport', { contracts: [payload] });
+                setStatus('✅ تمت إضافة العقد بنجاح', 'success');
+            } else {
+                await apiCall('updateContract', payload);
+                setStatus('✅ تم حفظ التعديلات بنجاح', 'success');
+            }
+            closeCard();
+        } catch (err) {
+            setStatus('❌ خطأ: ' + err.message, 'error');
         }
-    });
-    
-    if (!payload.contractNumber) { setStatus('❌ رقم العقد مطلوب', 'error'); return; }
-    
-    setStatus(isNewContract ? 'جاري إضافة العقد...' : 'جاري حفظ التعديلات...', 'info');
-    
-    try {
-        if (isNewContract) {
-            await apiCall('bulkImport', { contracts: [payload] });
-            setStatus('✅ تمت إضافة العقد بنجاح', 'success');
-        } else {
-            await apiCall('updateContract', payload);
-            setStatus('✅ تم حفظ التعديلات بنجاح', 'success');
-        }
-        closeCard();
-    } catch (err) {
-        setStatus('❌ خطأ: ' + err.message, 'error');
     }
-}
+
     async function exportFile(format) {
         setStatus('جاري تحميل السجل...', 'info');
         try {
@@ -541,60 +509,58 @@ async function saveContract() {
         }
     }
 
-// ✅ ENHANCED: Smart Excel cell parsing with auto-correction
-function parseExcelCell(value, type) {
-    if (value === null || value === undefined || value === "") return "";
-    
-    if (type === 'number') {
-        let str = String(value).trim();
+    function parseExcelCell(value, type) {
+        if (value === null || value === undefined || value === "") return "";
         
-        if (typeof value === 'number') {
-            // 🔧 AUTO-CORRECTION for numeric values
-            if (value > 0 && value < 100) {
-                return value * 1000;
+        if (type === 'number') {
+            let str = String(value).trim();
+            
+            if (typeof value === 'number') {
+                if (value > 0 && value < 100) {
+                    return value * 1000;
+                }
+                return value;
             }
-            return value;
+            
+            const dots = (str.match(/\./g) || []).length;
+            const commas = (str.match(/,/g) || []).length;
+            
+            let num;
+            
+            if (dots === 1 && commas === 0) {
+                num = parseFloat(str);
+            } else if (dots === 0 && commas === 1) {
+                num = parseFloat(str.replace(',', '.'));
+            } else if (dots > 0 && commas === 1) {
+                str = str.replace(/\./g, '').replace(',', '.');
+                num = parseFloat(str);
+            } else if (dots === 1 && commas > 0) {
+                str = str.replace(/,/g, '');
+                num = parseFloat(str);
+            } else {
+                num = parseFloat(str.replace(/[^\d.-]/g, ''));
+            }
+            
+            if (!isNaN(num) && num > 0 && num < 100) {
+                num = num * 1000;
+            }
+            
+            return isNaN(num) ? 0 : num;
         }
         
-        const dots = (str.match(/\./g) || []).length;
-        const commas = (str.match(/,/g) || []).length;
-        
-        let num;
-        
-        if (dots === 1 && commas === 0) {
-            num = parseFloat(str);
-        } else if (dots === 0 && commas === 1) {
-            num = parseFloat(str.replace(',', '.'));
-        } else if (dots > 0 && commas === 1) {
-            str = str.replace(/\./g, '').replace(',', '.');
-            num = parseFloat(str);
-        } else if (dots === 1 && commas > 0) {
-            str = str.replace(/,/g, '');
-            num = parseFloat(str);
-        } else {
-            num = parseFloat(str.replace(/[^\d.-]/g, ''));
+        if (type === 'date') {
+            if (typeof value === 'number') {
+                const dDate = new Date(Math.round((value - 25569) * 86400 * 1000));
+                return dDate.toISOString().split('T')[0];
+            }
+            const strVal = String(value).trim();
+            const d = new Date(strVal);
+            return isNaN(d.getTime()) ? strVal : d.toISOString().split('T')[0];
         }
         
-        // 🔧 AUTO-CORRECTION: If value is suspiciously small, multiply by 1000
-        if (!isNaN(num) && num > 0 && num < 100) {
-            num = num * 1000;
-        }
-        
-        return isNaN(num) ? 0 : num;
+        return String(value).trim();
     }
-    
-    if (type === 'date') {
-        if (typeof value === 'number') {
-            const dDate = new Date(Math.round((value - 25569) * 86400 * 1000));
-            return dDate.toISOString().split('T')[0];
-        }
-        const strVal = String(value).trim();
-        const d = new Date(strVal);
-        return isNaN(d.getTime()) ? strVal : d.toISOString().split('T')[0];
-    }
-    
-    return String(value).trim();
-}
+
     document.getElementById('fileInput').addEventListener('change', async (e) => {
         if (!e.target.files.length) return;
         const file = e.target.files[0];
