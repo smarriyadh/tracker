@@ -372,30 +372,14 @@
                 const dateValue = formatDateForInput(value);
                 inputHtml = `<input type="date" id="edit_${field.key}" value="${dateValue}">
                     <span class="date-warning">⚠️ لم يتم إدخال التاريخ</span>`;
-            } else if (field.type === 'number') {
-                const cleanValue = cleanAmountValue(value);
-                inputHtml = `<input type="text" id="edit_${field.key}" value="${cleanValue}">`;
-            } else {
-                inputHtml = `<input type="text" id="edit_${field.key}" value="${value}">`;
-            }
+} else if (field.type === 'number') {
+    const cleanValue = cleanAmountValue(value);
+    inputHtml = `<input type="text" id="edit_${field.key}" value="${cleanValue}">`;
+}
             
             div.innerHTML = `<label>${field.label}${field.required ? ' *' : ''}</label>${inputHtml}`;
             container.appendChild(div);
         });
-    }
-
-    function formatPriceInput(input) {
-        let val = input.value.trim();
-        if (!val) return;
-        
-        const cleanVal = val.replace(/,/g, '').replace(/\./g, '');
-        const num = parseFloat(cleanVal);
-        if (!isNaN(num)) {
-            input.value = num.toLocaleString('en-US', { 
-                minimumFractionDigits: 2, 
-                maximumFractionDigits: 2 
-            });
-        }
     }
 
     async function searchContract() {
