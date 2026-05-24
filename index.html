@@ -374,8 +374,7 @@
                     <span class="date-warning">⚠️ لم يتم إدخال التاريخ</span>`;
             } else if (field.type === 'number') {
                 const cleanValue = cleanAmountValue(value);
-                inputHtml = `<input type="text" id="edit_${field.key}" value="${cleanValue}" 
-                    onblur="formatPriceInput(this)" data-raw="${value}">`;
+                inputHtml = `<input type="text" id="edit_${field.key}" value="${cleanValue}">`;
             } else {
                 inputHtml = `<input type="text" id="edit_${field.key}" value="${value}">`;
             }
