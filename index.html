@@ -303,36 +303,49 @@ function cleanAmountValue(val) {
         } catch (e) {}
     }
     
-    // ✅ SMART DETECTION: Determine format
-    // Count dots and commas
+// ✅ ENHANCED: Smart price parsing with auto-correction
+function cleanAmountValue(val) {
+    if (val === null || val === undefined || val === '') return '';
+    let str = String(val).trim();
+    
+    // Handle ISO dates converted to prices
+    if (str.includes('T') && str.includes('-')) {
+        try {
+            const d = new Date(str);
+            if (!isNaN(d.getTime())) {
+                const year = d.getUTCFullYear();
+                if (year >= 1000 && year <= 99999) return year.toString();
+            }
+        } catch (e) {}
+    }
+    
+    // Count dots and commas to determine format
     const dots = (str.match(/\./g) || []).length;
     const commas = (str.match(/,/g) || []).length;
     
     let num;
     
     if (dots === 1 && commas === 0) {
-        // Likely decimal separator: 4601.15
         num = parseFloat(str);
     } else if (dots === 0 && commas === 1) {
-        // Likely decimal separator (European): 4601,15
         num = parseFloat(str.replace(',', '.'));
     } else if (dots > 0 && commas === 1) {
-        // European format: 1.234.567,89 or 1.234,56
-        // Remove dots (thousands), convert comma to dot (decimal)
         str = str.replace(/\./g, '').replace(',', '.');
         num = parseFloat(str);
     } else if (dots === 1 && commas > 0) {
-        // US/Arabic format: 1,234,567.89
-        // Remove commas (thousands), keep dot (decimal)
         str = str.replace(/,/g, '');
         num = parseFloat(str);
     } else {
-        // No separators or ambiguous
         num = parseFloat(str.replace(/,/g, '.'));
     }
     
+    // 🔧 AUTO-CORRECTION: If value is suspiciously small (< 100), multiply by 1000
+    // Recruitment contracts typically range from 3,000 to 20,000 SAR
+    if (!isNaN(num) && num > 0 && num < 100) {
+        num = num * 1000;
+    }
+    
     if (!isNaN(num) && num > 0) {
-        // ✅ Format with thousands separator and 2 decimals
         return num.toLocaleString('en-US', { 
             minimumFractionDigits: 2, 
             maximumFractionDigits: 2 
@@ -528,41 +541,43 @@ async function saveContract() {
         }
     }
 
-// ✅ CORRECTED: Smart Excel cell parsing
+// ✅ ENHANCED: Smart Excel cell parsing with auto-correction
 function parseExcelCell(value, type) {
     if (value === null || value === undefined || value === "") return "";
     
     if (type === 'number') {
         let str = String(value).trim();
         
-        // Excel might store as number directly
         if (typeof value === 'number') {
+            // 🔧 AUTO-CORRECTION for numeric values
+            if (value > 0 && value < 100) {
+                return value * 1000;
+            }
             return value;
         }
         
-        // ✅ SMART DETECTION for string numbers
         const dots = (str.match(/\./g) || []).length;
         const commas = (str.match(/,/g) || []).length;
         
         let num;
         
         if (dots === 1 && commas === 0) {
-            // Decimal separator: 4601.15
             num = parseFloat(str);
         } else if (dots === 0 && commas === 1) {
-            // European decimal: 4601,15
             num = parseFloat(str.replace(',', '.'));
         } else if (dots > 0 && commas === 1) {
-            // European format: 1.234,56
             str = str.replace(/\./g, '').replace(',', '.');
             num = parseFloat(str);
         } else if (dots === 1 && commas > 0) {
-            // US/Arabic format: 1,234.56
             str = str.replace(/,/g, '');
             num = parseFloat(str);
         } else {
-            // Plain number or remove all non-numeric
             num = parseFloat(str.replace(/[^\d.-]/g, ''));
+        }
+        
+        // 🔧 AUTO-CORRECTION: If value is suspiciously small, multiply by 1000
+        if (!isNaN(num) && num > 0 && num < 100) {
+            num = num * 1000;
         }
         
         return isNaN(num) ? 0 : num;
@@ -580,7 +595,6 @@ function parseExcelCell(value, type) {
     
     return String(value).trim();
 }
-
     document.getElementById('fileInput').addEventListener('change', async (e) => {
         if (!e.target.files.length) return;
         const file = e.target.files[0];
