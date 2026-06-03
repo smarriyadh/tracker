@@ -1,21 +1,17 @@
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
-  <base target="_top">
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>نظام إدارة عقود الاستقدام</title>
-  <!-- خط تجوال العربي -->
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
-  <!-- Tailwind CSS للتصميم الحديث -->
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: 'Tajawal', sans-serif; background-color: #f3f4f6; }
     .nav-item.active { background-color: #10b981; color: white; }
     .loader { border-top-color: #10b981; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
     @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    /* تحسين مظهر الجداول على الجوال */
     .table-responsive { overflow-x: auto; }
- 20px; }
   </style>
 </head>
 <body class="text-gray-800">
@@ -28,26 +24,17 @@
         <p class="text-sm text-gray-500 mt-1">إدارة العقود الذكية</p>
       </div>
       <nav class="flex-1 p-4 space-y-2">
-        <button onclick="showSection('dashboard')" id="nav-dashboard" class="nav-item active w-full text-right px-4 py-3 rounded-lg hover:bg-emerald-50 transition flex items-center gap-3">
-          📊 لوحة التحكم
-        </button>
-        <button onclick="showSection('contracts')" id="nav-contracts" class="nav-item w-full text-right px-4 py-3 rounded-lg hover:bg-emerald-50 transition flex items-center gap-3">
-          📁 إدارة العقود
-        </button>
-        <button onclick="showSection('add')" id="nav-add" class="nav-item w-full text-right px-4 py-3 rounded-lg hover:bg-emerald-50 transition flex items-center gap-3">
-          ➕ إضافة عقد جديد
-        </button>
+        <button onclick="showSection('dashboard')" id="nav-dashboard" class="nav-item active w-full text-right px-4 py-3 rounded-lg hover:bg-emerald-50 transition">📊 لوحة التحكم</button>
+        <button onclick="showSection('contracts')" id="nav-contracts" class="nav-item w-full text-right px-4 py-3 rounded-lg hover:bg-emerald-50 transition">📁 إدارة العقود</button>
+        <button onclick="showSection('add')" id="nav-add" class="nav-item w-full text-right px-4 py-3 rounded-lg hover:bg-emerald-50 transition">➕ إضافة عقد جديد</button>
       </nav>
     </aside>
 
-    <!-- المحتوى الرئيسي -->
     <main class="flex-1 overflow-y-auto p-4 md:p-8">
-      
       <!-- قسم لوحة التحكم -->
       <section id="dashboard" class="space-y-6">
         <h2 class="text-2xl font-bold mb-4">نظرة عامة</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="stats-container">
-          <!-- سيتم ملؤها بواسطة JavaScript -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="bg-white p-6 rounded-xl shadow-sm border-r-4 border-emerald-500">
             <p class="text-gray-500">إجمالي العقود</p>
             <p class="text-3xl font-bold" id="stat-total">جاري التحميل...</p>
@@ -61,13 +48,6 @@
             <p class="text-3xl font-bold" id="stat-arrived">جاري التحميل...</p>
           </div>
         </div>
-        
-        <div class="bg-white p-6 rounded-xl shadow-sm mt-6">
-          <h3 class="font-bold text-lg mb-4">📥 التقارير السريعة</h3>
-          <button onclick="alert('سيتم ربط هذا الزر بدالة تصدير PDF التي صممناها سابقاً')" class="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition">
-            تحميل تقرير العقود النشطة (PDF)
-          </button>
-        </div>
       </section>
 
       <!-- قسم إدارة العقود -->
@@ -76,7 +56,6 @@
           <h2 class="text-2xl font-bold">سجل العقود</h2>
           <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="🔍 بحث برقم العقد أو اسم العميل..." class="border rounded-lg px-4 py-2 w-full md:w-1/3 focus:outline-none focus:ring-2 focus:ring-emerald-500">
         </div>
-        
         <div class="bg-white rounded-xl shadow-sm overflow-hidden table-responsive">
           <table class="w-full text-right">
             <thead class="bg-gray-50 text-gray-600 font-semibold border-b">
@@ -90,9 +69,7 @@
                 <th class="p-4">إجراء</th>
               </tr>
             </thead>
-            <tbody id="contractsTableBody" class="divide-y divide-gray-100">
-              <!-- سيتم ملؤها بواسطة JavaScript -->
-            </tbody>
+            <tbody id="contractsTableBody" class="divide-y divide-gray-100"></tbody>
           </table>
         </div>
       </section>
@@ -101,27 +78,16 @@
       <section id="add" class="hidden max-w-3xl mx-auto">
         <h2 class="text-2xl font-bold mb-6">تسجيل عقد استقدام جديد</h2>
         <form id="contractForm" onsubmit="handleFormSubmit(event)" class="bg-white p-8 rounded-xl shadow-sm space-y-6">
-          
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">اسم العميل</label>
-              <input type="text" name="clientName" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">رقم جوال العميل</label>
-              <input type="text" name="clientPhone" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">اسم العاملة</label>
-              <input type="text" name="workerName" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none">
-            </div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">اسم العميل</label><input type="text" name="clientName" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">رقم جوال العميل</label><input type="text" name="clientPhone" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">اسم العاملة</label><input type="text" name="workerName" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">المهنة</label>
               <select name="profession" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
                 <option value="عاملة منزلية">عاملة منزلية</option>
                 <option value="سائق خاص">سائق خاص</option>
                 <option value="طباخ منزلي">طباخ منزلي</option>
-                <option value="مربية أطفال">مربية أطفال</option>
               </select>
             </div>
             <div>
@@ -130,37 +96,15 @@
                 <option value="إثيوبيا">إثيوبيا</option>
                 <option value="الفلبين">الفلبين</option>
                 <option value="كينيا">كينيا</option>
-                <option value="أوغندا">أوغندا</option>
-                <option value="بنغلاديش">بنغلاديش</option>
-                <option value="سريلانكا">سريلانكا</option>
               </select>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">تاريخ الوصول المتوقع</label>
-              <input type="date" name="expectedArrival" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">رقم الهوية</label>
-              <input type="text" name="idNumber" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">رقم التأشيرة</label>
-              <input type="text" name="visaNumber" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">مدة العقد (شهر)</label>
-              <input type="number" name="contractDuration" value="24" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">السعر المعتمد (ريال)</label>
-              <input type="number" name="price" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none">
-            </div>
-            <div class="md:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">اسم الوكيل / المكتب</label>
-              <input type="text" name="agent" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none">
-            </div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">تاريخ الوصول المتوقع</label><input type="date" name="expectedArrival" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">رقم الهوية</label><input type="text" name="idNumber" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">رقم التأشيرة</label><input type="text" name="visaNumber" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">مدة العقد (شهر)</label><input type="number" name="contractDuration" value="24" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">السعر المعتمد (ريال)</label><input type="number" name="price" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+            <div class="md:col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">اسم الوكيل / المكتب</label><input type="text" name="agent" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
           </div>
-
           <div class="pt-4 border-t flex justify-end gap-3">
             <button type="button" onclick="showSection('contracts')" class="px-6 py-2 border rounded-lg hover:bg-gray-50">إلغاء</button>
             <button type="submit" id="submitBtn" class="bg-emerald-600 text-white px-8 py-2 rounded-lg hover:bg-emerald-700 transition flex items-center gap-2">
@@ -169,63 +113,53 @@
           </div>
         </form>
       </section>
-
     </main>
   </div>
 
-  <!-- نافذة منبثقة للإشعارات -->
   <div id="toast" class="fixed bottom-5 left-5 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50">
     <span id="toastMessage"></span>
   </div>
 
   <script>
-    // 1. التنقل بين الأقسام
+    // ⚠️ هام جداً: استبدل هذا الرابط برابط نشر تطبيق الويب الخاص بك من Google Apps Script
+    const API_URL = "https://script.google.com/macros/s/AKfycbznAkdSxnUcpbTspKUJdspY1M-WvRhHp-IRic7g0KIAL4IoJBu3vPQ9xHCwIf8y3W4/exec"; 
+
     function showSection(sectionId) {
       document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden'));
       document.getElementById(sectionId).classList.remove('hidden');
-      
       document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
       document.getElementById('nav-' + sectionId).classList.add('active');
-
-      if (sectionId === 'contracts' || sectionId === 'dashboard') {
-        loadData();
-      }
+      if (sectionId === 'contracts' || sectionId === 'dashboard') loadData();
     }
 
-    // 2. تحميل البيانات من الخادم
     let allContracts = [];
-    function loadData() {
+    async function loadData() {
       document.getElementById('stat-total').innerText = 'جاري التحميل...';
-      google.script.run.withSuccessHandler(renderData).getContractsData();
-    }
-
-    function renderData(response) {
-      if (response.error) {
-        showToast(response.error, 'error');
-        return;
+      try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        if (data.error) { showToast(data.error, 'error'); return; }
+        allContracts = data;
+        updateDashboard();
+        renderTable(allContracts);
+      } catch (error) {
+        showToast('فشل الاتصال بالخادم', 'error');
       }
-      allContracts = response;
-      updateDashboard();
-      renderTable(allContracts);
     }
 
-    // 3. تحديث لوحة التحكم
     function updateDashboard() {
       document.getElementById('stat-total').innerText = allContracts.length;
       document.getElementById('stat-pending').innerText = allContracts.filter(c => c.status === 'تحت الإجراء' || c.status === 'بانتظار التأشيرة').length;
       document.getElementById('stat-arrived').innerText = allContracts.filter(c => c.status === 'تم الوصول').length;
     }
 
-    // 4. عرض الجدول
     function renderTable(data) {
       const tbody = document.getElementById('contractsTableBody');
       tbody.innerHTML = '';
-      
       if (data.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-500">لا توجد عقود مطابقة</td></tr>';
         return;
       }
-
       data.forEach(contract => {
         let statusColor = 'bg-gray-100 text-gray-800';
         if (contract.status === 'تم الوصول') statusColor = 'bg-green-100 text-green-800';
@@ -254,18 +188,12 @@
       });
     }
 
-    // 5. البحث في الجدول
     function filterTable() {
       const query = document.getElementById('searchInput').value.toLowerCase();
-      const filtered = allContracts.filter(c => 
-        c.id.toLowerCase().includes(query) || 
-        c.clientName.toLowerCase().includes(query)
-      );
-      renderTable(filtered);
+      renderTable(allContracts.filter(c => c.id.toLowerCase().includes(query) || c.clientName.toLowerCase().includes(query)));
     }
 
-    // 6. إرسال نموذج إضافة عقد جديد
-    function handleFormSubmit(e) {
+    async function handleFormSubmit(e) {
       e.preventDefault();
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
@@ -274,39 +202,51 @@
       const formData = new FormData(e.target);
       const formObject = Object.fromEntries(formData.entries());
 
-      google.script.run.withSuccessHandler(response => {
-        e.target.reset();
-        showToast(response.message, 'success');
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'add', data: formObject })
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+          e.target.reset();
+          showToast(result.message, 'success');
+          showSection('contracts');
+        } else {
+          showToast(result.error || 'حدث خطأ', 'error');
+        }
+      } catch (error) {
+        showToast('فشل الاتصال بالخادم', 'error');
+      } finally {
         btn.disabled = false;
         btn.innerHTML = '<span>حفظ العقد</span>';
-        showSection('contracts');
-      }).addNewContract(formObject);
+      }
     }
 
-    // 7. تحديث الحالة
-    function updateStatus(rowIndex, newStatus) {
+    async function updateStatus(rowIndex, newStatus) {
       showToast('جاري التحديث...', 'info');
-      google.script.run.withSuccessHandler(response => {
-        showToast(response.message, 'success');
-        loadData(); // إعادة تحميل البيانات لتحديث الألوان والإحصائيات
-      }).updateContractStatus(rowIndex, newStatus);
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'update', rowIndex: rowIndex, newStatus: newStatus })
+        });
+        const result = await response.json();
+        showToast(result.message, result.success ? 'success' : 'error');
+        if (result.success) loadData();
+      } catch (error) {
+        showToast('فشل الاتصال بالخادم', 'error');
+      }
     }
 
-    // 8. دالة عرض الإشعارات (Toast)
     function showToast(message, type = 'success') {
       const toast = document.getElementById('toast');
-      const msgEl = document.getElementById('toastMessage');
-      msgEl.innerText = message;
-      
+      document.getElementById('toastMessage').innerText = message;
       toast.className = `fixed bottom-5 left-5 px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 z-50 text-white ${type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600'}`;
       toast.classList.remove('translate-y-20', 'opacity-0');
-      
-      setTimeout(() => {
-        toast.classList.add('translate-y-20', 'opacity-0');
-      }, 3000);
+      setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
     }
 
-    // تحميل البيانات عند فتح الصفحة
     window.onload = () => loadData();
   </script>
 </body>
