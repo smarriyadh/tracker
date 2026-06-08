@@ -11,15 +11,33 @@
     .nav-item.active { background-color: #10b981; color: white; }
     .loader { border-top-color: #10b981; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
     @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .table-responsive { overflow-x: auto; }
-    /* Make table headers sticky for better UX when scrolling horizontally */
-    th { position: sticky; top: 0; background-color: #f9fafb; z-index: 10; }
+    
+    /* Enhanced Table Scrolling */
+    .table-responsive { 
+      overflow-x: auto; 
+      -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+    }
+    .table-responsive::-webkit-scrollbar { height: 8px; }
+    .table-responsive::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+    .table-responsive::-webkit-scrollbar-thumb { background: #10b981; border-radius: 4px; }
+    
+    /* Sticky First Column (Contract ID) for RTL */
+    th:first-child, td:first-child {
+      position: sticky;
+      right: 0;
+      background-color: #f9fafb; /* Match header bg */
+      z-index: 10;
+      box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+    }
+    td:first-child { background-color: white; }
+    tr:hover td:first-child { background-color: #f9fafb; }
   </style>
 </head>
 <body class="text-gray-800">
 
   <div class="flex h-screen overflow-hidden">
-    <aside class="w-64 bg-white shadow-lg hidden md:flex flex-col">
+    <aside class="w-64 bg-white shadow-lg hidden md:flex flex-col z-20">
       <div class="p-6 text-center border-b">
         <h1 class="text-2xl font-bold text-emerald-600">نظام الاستقدام</h1>
         <p class="text-sm text-gray-500 mt-1">إدارة العقود الذكية</p>
@@ -32,24 +50,59 @@
     </aside>
 
     <main class="flex-1 overflow-y-auto p-4 md:p-8">
+      
+      <!-- ================= DASHBOARD SECTION ================= -->
       <section id="dashboard" class="space-y-6">
-        <h2 class="text-2xl font-bold mb-4">نظرة عامة</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <h2 class="text-2xl font-bold mb-4">لوحة التحكم والتحليلات</h2>
+        
+        <!-- 1. Key Financial & General Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div class="bg-white p-6 rounded-xl shadow-sm border-r-4 border-emerald-500">
-            <p class="text-gray-500">إجمالي العقود</p>
-            <p class="text-3xl font-bold" id="stat-total">جاري التحميل...</p>
+            <p class="text-gray-500 text-sm">إجمالي العقود</p>
+            <p class="text-3xl font-bold mt-2" id="stat-total">0</p>
           </div>
           <div class="bg-white p-6 rounded-xl shadow-sm border-r-4 border-blue-500">
-            <p class="text-gray-500">قيد الإجراء</p>
-            <p class="text-3xl font-bold" id="stat-pending">جاري التحميل...</p>
+            <p class="text-gray-500 text-sm">إجمالي الإيرادات (السعر المعتمد)</p>
+            <p class="text-3xl font-bold mt-2 text-blue-600" id="stat-revenue">0 ر.س</p>
+            <p class="text-xs text-gray-400 mt-1">متوسط العقد: <span id="stat-avg-price">0</span> ر.س</p>
+          </div>
+          <div class="bg-white p-6 rounded-xl shadow-sm border-r-4 border-yellow-500">
+            <p class="text-gray-500 text-sm">العقود النشطة (قيد الإجراء)</p>
+            <p class="text-3xl font-bold mt-2 text-yellow-600" id="stat-active">0</p>
           </div>
           <div class="bg-white p-6 rounded-xl shadow-sm border-r-4 border-green-500">
-            <p class="text-gray-500">تم الوصول</p>
-            <p class="text-3xl font-bold" id="stat-arrived">جاري التحميل...</p>
+            <p class="text-gray-500 text-sm">الوصول القادم (خلال 30 يوم)</p>
+            <p class="text-3xl font-bold mt-2 text-green-600" id="stat-upcoming">0</p>
+          </div>
+        </div>
+
+        <!-- 2. Operational & Categorical Analysis -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- Status Breakdown -->
+          <div class="bg-white p-6 rounded-xl shadow-sm lg:col-span-2">
+            <h3 class="font-bold text-lg mb-4 text-gray-700">تحليل حالة العقود</h3>
+            <div class="space-y-4" id="status-breakdown">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- Country & Profession Breakdown -->
+          <div class="bg-white p-6 rounded-xl shadow-sm">
+            <h3 class="font-bold text-lg mb-4 text-gray-700">توزيع حسب الدولة</h3>
+            <div class="space-y-3" id="country-breakdown">
+              <!-- Populated by JS -->
+            </div>
+            
+            <h3 class="font-bold text-lg mb-4 mt-8 text-gray-700">توزيع حسب المهنة</h3>
+            <div class="space-y-3" id="profession-breakdown">
+              <!-- Populated by JS -->
+            </div>
           </div>
         </div>
       </section>
 
+      <!-- ================= CONTRACTS SECTION ================= -->
       <section id="contracts" class="hidden space-y-6">
         <div class="flex justify-between items-center flex-wrap gap-4">
           <h2 class="text-2xl font-bold">سجل العقود الكامل</h2>
@@ -59,8 +112,8 @@
           <table class="w-full text-right whitespace-nowrap">
             <thead class="bg-gray-50 text-gray-600 font-semibold border-b">
               <tr>
+                <th class="p-3 min-w-[100px]">رقم العقد</th>
                 <th class="p-3">م</th>
-                <th class="p-3">رقم العقد</th>
                 <th class="p-3">اسم العميل</th>
                 <th class="p-3">رقم العميل</th>
                 <th class="p-3">المهنة</th>
@@ -75,8 +128,8 @@
                 <th class="p-3">السعر</th>
                 <th class="p-3">الوكيل</th>
                 <th class="p-3">المصدر</th>
-                <th class="p-3">الحالة</th>
-                <th class="p-3">إجراء</th>
+                <th class="p-3 min-w-[120px]">الحالة</th>
+                <th class="p-3 min-w-[120px]">إجراء</th>
               </tr>
             </thead>
             <tbody id="contractsTableBody" class="divide-y divide-gray-100"></tbody>
@@ -84,6 +137,7 @@
         </div>
       </section>
 
+      <!-- ================= ADD SECTION ================= -->
       <section id="add" class="hidden max-w-3xl mx-auto">
         <h2 class="text-2xl font-bold mb-6">تسجيل عقد استقدام جديد</h2>
         <form id="contractForm" onsubmit="handleFormSubmit(event)" class="bg-white p-8 rounded-xl shadow-sm space-y-6">
@@ -130,7 +184,7 @@
   </div>
 
   <script>
-    // ️ استبدل هذا الرابط برابط الـ Web App الفعلي بعد إعادة نشر السكريبت (New Deployment)
+    // ⚠️ استبدل هذا الرابط برابط الـ Web App الفعلي بعد إعادة نشر السكريبت (New Deployment)
     const API_URL = "https://script.google.com/macros/s/AKfycbxdyVFJE8A5hbMz9ruBVkWPQxqTOdA6cs3hcBHLX7qKhdkzK6Z0-7PK32DYZMiX/exec"; 
 
     function showSection(sectionId) {
@@ -144,7 +198,6 @@
     let allContracts = [];
     
     async function loadData() {
-      document.getElementById('stat-total').innerText = 'جاري التحميل...';
       try {
         const response = await fetch(API_URL + '?t=' + new Date().getTime(), {
           method: 'GET',
@@ -162,7 +215,6 @@
         }
 
         if (data.error) { showToast(data.error, 'error'); return; }
-        
         allContracts = Array.isArray(data) ? data : [];
         
         updateDashboard();
@@ -173,10 +225,89 @@
       }
     }
 
+    // --- Enhanced Dashboard Logic ---
     function updateDashboard() {
-      document.getElementById('stat-total').innerText = allContracts.length;
-      document.getElementById('stat-pending').innerText = allContracts.filter(c => c.status === 'تحت الإجراء' || c.status === 'بانتظار التأشيرة').length;
-      document.getElementById('stat-arrived').innerText = allContracts.filter(c => c.status === 'تم الوصول').length;
+      const total = allContracts.length;
+      document.getElementById('stat-total').innerText = total;
+
+      // Financial Analysis
+      const totalRevenue = allContracts.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
+      const avgPrice = total > 0 ? (totalRevenue / total).toFixed(2) : 0;
+      document.getElementById('stat-revenue').innerText = totalRevenue.toLocaleString('en-US') + ' ر.س';
+      document.getElementById('stat-avg-price').innerText = avgPrice;
+
+      // Operational Analysis
+      const activeCount = allContracts.filter(c => c.status === 'تحت الإجراء' || c.status === 'بانتظار التأشيرة').length;
+      document.getElementById('stat-active').innerText = activeCount;
+
+      // Upcoming Arrivals (Next 30 Days)
+      const today = new Date();
+      const nextMonth = new Date();
+      nextMonth.setDate(today.getDate() + 30);
+      
+      const upcomingCount = allContracts.filter(c => {
+        if (!c.expectedArrival) return false;
+        const arrDate = new Date(c.expectedArrival);
+        return arrDate >= today && arrDate <= nextMonth;
+      }).length;
+      document.getElementById('stat-upcoming').innerText = upcomingCount;
+
+      // Status Breakdown (Progress Bars)
+      const statuses = ['تحت الإجراء', 'بانتظار التأشيرة', 'تم الوصول', 'ملغي'];
+      const statusColors = {
+        'تحت الإجراء': 'bg-yellow-500',
+        'بانتظار التأشيرة': 'bg-blue-500',
+        'تم الوصول': 'bg-green-500',
+        'ملغي': 'bg-red-500'
+      };
+      
+      let statusHtml = '';
+      statuses.forEach(status => {
+        const count = allContracts.filter(c => c.status === status).length;
+        const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+        statusHtml += `
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span class="font-medium">${status}</span>
+              <span class="text-gray-500">${count} عقد (${percentage}%)</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+              <div class="${statusColors[status]} h-2.5 rounded-full" style="width: ${percentage}%"></div>
+            </div>
+          </div>
+        `;
+      });
+      document.getElementById('status-breakdown').innerHTML = statusHtml || '<p class="text-gray-400">لا توجد بيانات</p>';
+
+      // Country Breakdown
+      const countries = {};
+      allContracts.forEach(c => { if(c.country) countries[c.country] = (countries[c.country] || 0) + 1; });
+      renderCategoryBreakdown('country-breakdown', countries, total);
+
+      // Profession Breakdown
+      const professions = {};
+      allContracts.forEach(c => { if(c.profession) professions[c.profession] = (professions[c.profession] || 0) + 1; });
+      renderCategoryBreakdown('profession-breakdown', professions, total);
+    }
+
+    function renderCategoryBreakdown(elementId, dataObj, total) {
+      const container = document.getElementById(elementId);
+      if (Object.keys(dataObj).length === 0) {
+        container.innerHTML = '<p class="text-gray-400 text-sm">لا توجد بيانات</p>';
+        return;
+      }
+      
+      let html = '';
+      Object.entries(dataObj).sort((a, b) => b[1] - a[1]).forEach(([name, count]) => {
+        const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+        html += `
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-gray-700">${name}</span>
+            <span class="font-bold text-emerald-600">${count} <span class="text-xs text-gray-400 font-normal">(${percentage}%)</span></span>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
     }
 
     function renderTable(data) {
@@ -196,8 +327,8 @@
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-gray-50 transition';
         tr.innerHTML = `
+          <td class="p-3 font-bold text-emerald-700">${contract.id || ''}</td>
           <td class="p-3 text-sm">${contract.serial || ''}</td>
-          <td class="p-3 font-medium text-emerald-700">${contract.id || ''}</td>
           <td class="p-3">${contract.clientName || ''}</td>
           <td class="p-3 text-sm">${contract.clientPhone || ''}</td>
           <td class="p-3">${contract.profession || ''}</td>
@@ -209,12 +340,12 @@
           <td class="p-3 text-sm">${contract.idNumber || ''}</td>
           <td class="p-3 text-sm">${contract.visaNumber || ''}</td>
           <td class="p-3 text-sm">${contract.contractDuration || ''}</td>
-          <td class="p-3 text-sm">${contract.price || ''}</td>
+          <td class="p-3 text-sm font-medium">${contract.price ? parseFloat(contract.price).toLocaleString('en-US') : ''}</td>
           <td class="p-3 text-sm">${contract.agent || ''}</td>
           <td class="p-3 text-sm">${contract.source || ''}</td>
           <td class="p-3"><span class="px-3 py-1 rounded-full text-xs font-semibold ${statusColor}">${contract.status}</span></td>
           <td class="p-3">
-            <select onchange="updateStatus(${contract.rowIndex}, this.value)" class="text-sm border rounded px-2 py-1 bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+            <select onchange="updateStatus(${contract.rowIndex}, this.value)" class="text-sm border rounded px-2 py-1 bg-white focus:ring-2 focus:ring-emerald-500 outline-none w-full">
               <option value="تحت الإجراء" ${contract.status === 'تحت الإجراء' ? 'selected' : ''}>تحت الإجراء</option>
               <option value="بانتظار التأشيرة" ${contract.status === 'بانتظار التأشيرة' ? 'selected' : ''}>بانتظار التأشيرة</option>
               <option value="تم الوصول" ${contract.status === 'تم الوصول' ? 'selected' : ''}>تم الوصول</option>
