@@ -62,6 +62,7 @@
                 <th class="p-4">المهنة</th>
                 <th class="p-4">الدولة</th>
                 <th class="p-4">تاريخ التقديم</th>
+                <th class="p-4">تاريخ الوصول</th>
                 <th class="p-4">الحالة</th>
                 <th class="p-4">إجراء</th>
               </tr>
@@ -76,12 +77,12 @@
         <form id="contractForm" onsubmit="handleFormSubmit(event)" class="bg-white p-8 rounded-xl shadow-sm space-y-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div><label class="block text-sm font-medium text-gray-700 mb-1">اسم العميل</label><input type="text" name="clientName" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">رقم جوال العميل</label><input type="text" name="clientPhone" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">رقم جوال العميل (رقم العميل)</label><input type="text" name="clientPhone" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
             <div><label class="block text-sm font-medium text-gray-700 mb-1">اسم العاملة</label><input type="text" name="workerName" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">المهنة</label>
               <select name="profession" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
-                <option value="عاملة منزلية">عاملة منزلية</option>
+                <option value="عامله منزليه">عامله منزليه</option>
                 <option value="سائق خاص">سائق خاص</option>
                 <option value="طباخ منزلي">طباخ منزلي</option>
               </select>
@@ -89,16 +90,16 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">الدولة</label>
               <select name="country" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
-                <option value="إثيوبيا">إثيوبيا</option>
+                <option value="اثيوبيا">اثيوبيا</option>
                 <option value="الفلبين">الفلبين</option>
                 <option value="كينيا">كينيا</option>
               </select>
             </div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">تاريخ الوصول المتوقع</label><input type="date" name="expectedArrival" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">تاريخ الوصول</label><input type="date" name="expectedArrival" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
             <div><label class="block text-sm font-medium text-gray-700 mb-1">رقم الهوية</label><input type="text" name="idNumber" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
             <div><label class="block text-sm font-medium text-gray-700 mb-1">رقم التأشيرة</label><input type="text" name="visaNumber" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">مدة العقد (شهر)</label><input type="number" name="contractDuration" value="24" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">السعر المعتمد (ريال)</label><input type="number" name="price" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">مدة العقد</label><input type="number" name="contractDuration" value="90" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">السعر المعتمد</label><input type="number" step="0.01" name="price" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
             <div class="md:col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">اسم الوكيل / المكتب</label><input type="text" name="agent" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
           </div>
           <div class="pt-4 border-t flex justify-end gap-3">
@@ -117,8 +118,8 @@
   </div>
 
   <script>
-    // ⚠️ تنبيه: إذا قمت بعمل إصدار جديد (New Deployment) في Apps Script، استبدل الرابط أدناه بالرابط الجديد
-    const API_URL = "https://script.google.com/macros/s/AKfycbzWQAZDdwblJoN7C2WVMQhLl0zUuEs-qO2J5S2zKilGLdYr-NKVtyvHUQteB0PesoI/exec"; 
+    // ⚠️ استبدل هذا الرابط برابط الـ Web App الفعلي بعد إعادة نشر السكريبت (New Deployment)
+    const API_URL = "https://script.google.com/macros/s/AKfycbyMiRZa_bivt5iNdiAYzsJoebdLq8rOmslnw7QNsQ9-3wJpgTKFgv6-WyW6NJRApiE/exec"; 
 
     function showSection(sectionId) {
       document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden'));
@@ -153,7 +154,7 @@
       const tbody = document.getElementById('contractsTableBody');
       tbody.innerHTML = '';
       if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-500">لا توجد عقود مطابقة</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-gray-500">لا توجد عقود مطابقة</td></tr>';
         return;
       }
       data.forEach(contract => {
@@ -171,6 +172,7 @@
           <td class="p-4">${contract.profession || ''}</td>
           <td class="p-4">${contract.country || ''}</td>
           <td class="p-4 text-sm text-gray-600">${contract.submissionDate || ''}</td>
+          <td class="p-4 text-sm text-gray-600">${contract.expectedArrival || ''}</td>
           <td class="p-4"><span class="px-3 py-1 rounded-full text-xs font-semibold ${statusColor}">${contract.status || 'تحت الإجراء'}</span></td>
           <td class="p-4">
             <select onchange="updateStatus(${contract.rowIndex}, this.value)" class="text-sm border rounded px-2 py-1 bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
@@ -188,12 +190,11 @@
     function filterTable() {
       const query = document.getElementById('searchInput').value.toLowerCase();
       renderTable(allContracts.filter(c => 
-        (c.id && c.id.toLowerCase().includes(query)) || 
+        (c.id && c.id.toString().toLowerCase().includes(query)) || 
         (c.clientName && c.clientName.toLowerCase().includes(query))
       ));
     }
 
-    // تم تحديث الدالة لتجنب الـ CORS والـ OPTIONS Preflight بشكل كامل
     async function handleFormSubmit(e) {
       e.preventDefault();
       const btn = document.getElementById('submitBtn');
@@ -208,9 +209,7 @@
           method: 'POST',
           mode: 'cors',
           redirect: 'follow',
-          headers: {
-            'Content-Type': 'text/plain;charset=utf-8' // إرسال كنص خام لتخطي حظر المتصفح
-          },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'add', data: formObject })
         });
         const result = await response.json();
@@ -230,7 +229,6 @@
       }
     }
 
-    // تم تحديث دالة تغيير الحالة لتتوافق مع معايير الكورس والنص الخام
     async function updateStatus(rowIndex, newStatus) {
       showToast('جاري التحديث واستصدار التنبيهات...', 'info');
       try {
@@ -238,9 +236,7 @@
           method: 'POST',
           mode: 'cors',
           redirect: 'follow',
-          headers: {
-            'Content-Type': 'text/plain;charset=utf-8'
-          },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'update', rowIndex: rowIndex, newStatus: newStatus })
         });
         const result = await response.json();
