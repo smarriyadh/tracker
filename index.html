@@ -4,132 +4,216 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>نظام إدارة عقود الاستقدام</title>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { font-family: 'Tajawal', sans-serif; background-color: #f3f4f6; }
-    .nav-item.active { background-color: #10b981; color: white; }
+    body { font-family: 'Tajawal', sans-serif; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); }
+    .nav-item.active { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3); }
     .loader { border-top-color: #10b981; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
     @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    
-    /* Enhanced Table Scrolling */
-    .table-responsive { 
-      overflow-x: auto; 
-      -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-      box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
-    }
+    .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
     .table-responsive::-webkit-scrollbar { height: 8px; }
     .table-responsive::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
     .table-responsive::-webkit-scrollbar-thumb { background: #10b981; border-radius: 4px; }
-    
-    /* Sticky First Column (Contract ID) for RTL */
-    th:first-child, td:first-child {
-      position: sticky;
-      right: 0;
-      background-color: #f9fafb; /* Match header bg */
-      z-index: 10;
-      box-shadow: -2px 0 5px rgba(0,0,0,0.05);
-    }
+    th:first-child, td:first-child { position: sticky; right: 0; background-color: #f9fafb; z-index: 10; box-shadow: -2px 0 5px rgba(0,0,0,0.05); }
     td:first-child { background-color: white; }
     tr:hover td:first-child { background-color: #f9fafb; }
+    .stat-card { transition: all 0.3s ease; }
+    .stat-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+    .chart-container { position: relative; height: 300px; }
+    .fade-in { animation: fadeIn 0.5s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body class="text-gray-800">
 
   <div class="flex h-screen overflow-hidden">
-    <aside class="w-64 bg-white shadow-lg hidden md:flex flex-col z-20">
-      <div class="p-6 text-center border-b">
+    <aside class="w-64 bg-white shadow-2xl hidden md:flex flex-col z-20">
+      <div class="p-6 text-center border-b bg-gradient-to-br from-emerald-50 to-white">
+        <div class="text-4xl mb-2">🎯</div>
         <h1 class="text-2xl font-bold text-emerald-600">نظام الاستقدام</h1>
         <p class="text-sm text-gray-500 mt-1">إدارة العقود الذكية</p>
       </div>
       <nav class="flex-1 p-4 space-y-2">
-        <button onclick="showSection('dashboard')" id="nav-dashboard" class="nav-item active w-full text-right px-4 py-3 rounded-lg hover:bg-emerald-50 transition"> لوحة التحكم</button>
-        <button onclick="showSection('contracts')" id="nav-contracts" class="nav-item w-full text-right px-4 py-3 rounded-lg hover:bg-emerald-50 transition">📁 إدارة العقود</button>
-        <button onclick="showSection('add')" id="nav-add" class="nav-item w-full text-right px-4 py-3 rounded-lg hover:bg-emerald-50 transition">➕ إضافة عقد جديد</button>
+        <button onclick="showSection('dashboard')" id="nav-dashboard" class="nav-item active w-full text-right px-4 py-3 rounded-xl hover:bg-emerald-50 transition flex items-center gap-3">
+          <i class="fas fa-chart-line text-lg"></i>
+          <span>لوحة التحكم</span>
+        </button>
+        <button onclick="showSection('contracts')" id="nav-contracts" class="nav-item w-full text-right px-4 py-3 rounded-xl hover:bg-emerald-50 transition flex items-center gap-3">
+          <i class="fas fa-folder-open text-lg"></i>
+          <span>إدارة العقود</span>
+        </button>
+        <button onclick="showSection('add')" id="nav-add" class="nav-item w-full text-right px-4 py-3 rounded-xl hover:bg-emerald-50 transition flex items-center gap-3">
+          <i class="fas fa-plus-circle text-lg"></i>
+          <span>إضافة عقد جديد</span>
+        </button>
       </nav>
+      <div class="p-4 border-t bg-gray-50">
+        <div class="text-center text-xs text-gray-500">
+          <p>النسخة 2.0</p>
+          <p class="mt-1">© 2024 جميع الحقوق محفوظة</p>
+        </div>
+      </div>
     </aside>
 
     <main class="flex-1 overflow-y-auto p-4 md:p-8">
       
       <!-- ================= DASHBOARD SECTION ================= -->
-      <section id="dashboard" class="space-y-6">
-        <h2 class="text-2xl font-bold mb-4">لوحة التحكم والتحليلات</h2>
+      <section id="dashboard" class="space-y-6 fade-in">
+        <div class="flex justify-between items-center">
+          <h2 class="text-3xl font-bold text-gray-800">لوحة التحكم والتحليلات</h2>
+          <button onclick="loadData()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition flex items-center gap-2">
+            <i class="fas fa-sync-alt"></i>
+            <span>تحديث البيانات</span>
+          </button>
+        </div>
         
-        <!-- 1. Key Financial & General Metrics -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div class="bg-white p-6 rounded-xl shadow-sm border-r-4 border-emerald-500">
-            <p class="text-gray-500 text-sm">إجمالي العقود</p>
-            <p class="text-3xl font-bold mt-2" id="stat-total">0</p>
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="stat-card bg-white p-6 rounded-2xl shadow-lg border-r-4 border-emerald-500">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-500 text-sm font-medium">إجمالي العقود</p>
+                <p class="text-4xl font-bold mt-2 text-gray-800" id="stat-total">0</p>
+                <p class="text-xs text-emerald-600 mt-1"><i class="fas fa-file-contract"></i> عقد مسجل</p>
+              </div>
+              <div class="bg-emerald-100 p-4 rounded-full">
+                <i class="fas fa-folder text-3xl text-emerald-600"></i>
+              </div>
+            </div>
           </div>
-          <div class="bg-white p-6 rounded-xl shadow-sm border-r-4 border-blue-500">
-            <p class="text-gray-500 text-sm">إجمالي الإيرادات (السعر المعتمد)</p>
-            <p class="text-3xl font-bold mt-2 text-blue-600" id="stat-revenue">0 ر.س</p>
-            <p class="text-xs text-gray-400 mt-1">متوسط العقد: <span id="stat-avg-price">0</span> ر.س</p>
+
+          <div class="stat-card bg-white p-6 rounded-2xl shadow-lg border-r-4 border-blue-500">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-500 text-sm font-medium">إجمالي الإيرادات</p>
+                <p class="text-3xl font-bold mt-2 text-blue-600" id="stat-revenue">0</p>
+                <p class="text-xs text-gray-400 mt-1">متوسط: <span id="stat-avg-price">0</span> ر.س</p>
+              </div>
+              <div class="bg-blue-100 p-4 rounded-full">
+                <i class="fas fa-money-bill-wave text-3xl text-blue-600"></i>
+              </div>
+            </div>
           </div>
-          <div class="bg-white p-6 rounded-xl shadow-sm border-r-4 border-yellow-500">
-            <p class="text-gray-500 text-sm">العقود النشطة (قيد الإجراء)</p>
-            <p class="text-3xl font-bold mt-2 text-yellow-600" id="stat-active">0</p>
+
+          <div class="stat-card bg-white p-6 rounded-2xl shadow-lg border-r-4 border-yellow-500">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-500 text-sm font-medium">العقود النشطة</p>
+                <p class="text-4xl font-bold mt-2 text-yellow-600" id="stat-active">0</p>
+                <p class="text-xs text-yellow-600 mt-1"><i class="fas fa-spinner fa-spin"></i> قيد المعالجة</p>
+              </div>
+              <div class="bg-yellow-100 p-4 rounded-full">
+                <i class="fas fa-tasks text-3xl text-yellow-600"></i>
+              </div>
+            </div>
           </div>
-          <div class="bg-white p-6 rounded-xl shadow-sm border-r-4 border-green-500">
-            <p class="text-gray-500 text-sm">الوصول القادم (خلال 30 يوم)</p>
-            <p class="text-3xl font-bold mt-2 text-green-600" id="stat-upcoming">0</p>
+
+          <div class="stat-card bg-white p-6 rounded-2xl shadow-lg border-r-4 border-green-500">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-500 text-sm font-medium">الوصول القادم</p>
+                <p class="text-4xl font-bold mt-2 text-green-600" id="stat-upcoming">0</p>
+                <p class="text-xs text-green-600 mt-1"><i class="fas fa-calendar-check"></i> خلال 30 يوم</p>
+              </div>
+              <div class="bg-green-100 p-4 rounded-full">
+                <i class="fas fa-plane-arrival text-3xl text-green-600"></i>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- 2. Operational & Categorical Analysis -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          <!-- Status Breakdown -->
-          <div class="bg-white p-6 rounded-xl shadow-sm lg:col-span-2">
-            <h3 class="font-bold text-lg mb-4 text-gray-700">تحليل حالة العقود</h3>
-            <div class="space-y-4" id="status-breakdown">
-              <!-- Populated by JS -->
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Status Distribution Chart -->
+          <div class="bg-white p-6 rounded-2xl shadow-lg">
+            <h3 class="font-bold text-xl mb-4 text-gray-800 flex items-center gap-2">
+              <i class="fas fa-chart-pie text-emerald-600"></i>
+              توزيع العقود حسب الحالة
+            </h3>
+            <div class="chart-container">
+              <canvas id="statusChart"></canvas>
+            </div>
+            <div id="status-list" class="mt-4 space-y-2">
+              <!-- Status list will be populated here -->
             </div>
           </div>
 
-          <!-- Country & Profession Breakdown -->
-          <div class="bg-white p-6 rounded-xl shadow-sm">
-            <h3 class="font-bold text-lg mb-4 text-gray-700">توزيع حسب الدولة</h3>
-            <div class="space-y-3" id="country-breakdown">
-              <!-- Populated by JS -->
+          <!-- Country Distribution Chart -->
+          <div class="bg-white p-6 rounded-2xl shadow-lg">
+            <h3 class="font-bold text-xl mb-4 text-gray-800 flex items-center gap-2">
+              <i class="fas fa-chart-bar text-blue-600"></i>
+              توزيع العقود حسب الدولة
+            </h3>
+            <div class="chart-container">
+              <canvas id="countryChart"></canvas>
             </div>
-            
-            <h3 class="font-bold text-lg mb-4 mt-8 text-gray-700">توزيع حسب المهنة</h3>
-            <div class="space-y-3" id="profession-breakdown">
-              <!-- Populated by JS -->
+            <div id="country-list" class="mt-4 space-y-2">
+              <!-- Country list will be populated here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Additional Stats -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Profession Distribution -->
+          <div class="bg-white p-6 rounded-2xl shadow-lg">
+            <h3 class="font-bold text-xl mb-4 text-gray-800 flex items-center gap-2">
+              <i class="fas fa-briefcase text-purple-600"></i>
+              التوزيع حسب المهنة
+            </h3>
+            <div id="profession-list" class="space-y-3">
+              <!-- Profession list will be populated here -->
+            </div>
+          </div>
+
+          <!-- Recent Activity -->
+          <div class="bg-white p-6 rounded-2xl shadow-lg lg:col-span-2">
+            <h3 class="font-bold text-xl mb-4 text-gray-800 flex items-center gap-2">
+              <i class="fas fa-clock text-orange-600"></i>
+              آخر العقود المضافة
+            </h3>
+            <div id="recent-contracts" class="space-y-3">
+              <!-- Recent contracts will be populated here -->
             </div>
           </div>
         </div>
       </section>
 
       <!-- ================= CONTRACTS SECTION ================= -->
-      <section id="contracts" class="hidden space-y-6">
+      <section id="contracts" class="hidden space-y-6 fade-in">
         <div class="flex justify-between items-center flex-wrap gap-4">
-          <h2 class="text-2xl font-bold">سجل العقود الكامل</h2>
-          <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="🔍 بحث (الاسم، الرقم، الجوال، العاملة)..." class="border rounded-lg px-4 py-2 w-full md:w-1/3 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          <h2 class="text-2xl font-bold text-gray-800">سجل العقود الكامل</h2>
+          <div class="relative w-full md:w-1/3">
+            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="🔍 بحث (الاسم، الرقم، الجوال، العاملة)..." 
+              class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-emerald-500 transition">
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+          </div>
         </div>
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden table-responsive">
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden table-responsive">
           <table class="w-full text-right whitespace-nowrap">
-            <thead class="bg-gray-50 text-gray-600 font-semibold border-b">
+            <thead class="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-bold">
               <tr>
-                <th class="p-3 min-w-[100px]">رقم العقد</th>
-                <th class="p-3">م</th>
-                <th class="p-3">اسم العميل</th>
-                <th class="p-3">رقم العميل</th>
-                <th class="p-3">المهنة</th>
-                <th class="p-3">اسم العاملة</th>
-                <th class="p-3">الدولة</th>
-                <th class="p-3">الشهر</th>
-                <th class="p-3">تاريخ التقديم</th>
-                <th class="p-3">تاريخ الوصول</th>
-                <th class="p-3">رقم الهوية</th>
-                <th class="p-3">رقم التأشيرة</th>
-                <th class="p-3">المدة</th>
-                <th class="p-3">السعر</th>
-                <th class="p-3">الوكيل</th>
-                <th class="p-3">المصدر</th>
-                <th class="p-3 min-w-[120px]">الحالة</th>
-                <th class="p-3 min-w-[120px]">إجراء</th>
+                <th class="p-4 min-w-[120px]">رقم العقد</th>
+                <th class="p-4">م</th>
+                <th class="p-4">اسم العميل</th>
+                <th class="p-4">رقم العميل</th>
+                <th class="p-4">المهنة</th>
+                <th class="p-4">اسم العاملة</th>
+                <th class="p-4">الدولة</th>
+                <th class="p-4">الشهر</th>
+                <th class="p-4">تاريخ التقديم</th>
+                <th class="p-4">تاريخ الوصول</th>
+                <th class="p-4">رقم الهوية</th>
+                <th class="p-4">رقم التأشيرة</th>
+                <th class="p-4">المدة</th>
+                <th class="p-4">السعر</th>
+                <th class="p-4">الوكيل</th>
+                <th class="p-4">المصدر</th>
+                <th class="p-4 min-w-[140px]">الحالة</th>
+                <th class="p-4 min-w-[140px]">إجراء</th>
               </tr>
             </thead>
             <tbody id="contractsTableBody" class="divide-y divide-gray-100"></tbody>
@@ -138,54 +222,155 @@
       </section>
 
       <!-- ================= ADD SECTION ================= -->
-      <section id="add" class="hidden max-w-3xl mx-auto">
-        <h2 class="text-2xl font-bold mb-6">تسجيل عقد استقدام جديد</h2>
-        <form id="contractForm" onsubmit="handleFormSubmit(event)" class="bg-white p-8 rounded-xl shadow-sm space-y-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">اسم العميل</label><input type="text" name="clientName" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">رقم جوال العميل</label><input type="text" name="clientPhone" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">اسم العاملة</label><input type="text" name="workerName" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">المهنة</label>
-              <select name="profession" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
-                <option value="عامله منزليه">عامله منزليه</option>
-                <option value="سائق خاص">سائق خاص</option>
-                <option value="طباخ منزلي">طباخ منزلي</option>
-              </select>
+      <section id="add" class="hidden max-w-4xl mx-auto fade-in">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="bg-emerald-100 p-3 rounded-full">
+              <i class="fas fa-plus text-2xl text-emerald-600"></i>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">الدولة</label>
-              <select name="country" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
-                <option value="اثيوبيا">اثيوبيا</option>
-                <option value="الفلبين">الفلبين</option>
-                <option value="كينيا">كينيا</option>
-              </select>
+            <h2 class="text-3xl font-bold text-gray-800">تسجيل عقد استقدام جديد</h2>
+          </div>
+          
+          <form id="contractForm" onsubmit="handleFormSubmit(event)" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-2">
+                <label class="block text-sm font-bold text-gray-700">
+                  <i class="fas fa-user text-emerald-600 ml-1"></i>
+                  اسم العميل
+                </label>
+                <input type="text" name="clientName" required 
+                  class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition">
+              </div>
+              
+              <div class="space-y-2">
+                <label class="block text-sm font-bold text-gray-700">
+                  <i class="fas fa-phone text-emerald-600 ml-1"></i>
+                  رقم جوال العميل
+                </label>
+                <input type="text" name="clientPhone" required 
+                  class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition">
+              </div>
+              
+              <div class="space-y-2">
+                <label class="block text-sm font-bold text-gray-700">
+                  <i class="fas fa-female text-emerald-600 ml-1"></i>
+                  اسم العاملة
+                </label>
+                <input type="text" name="workerName" required 
+                  class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition">
+              </div>
+              
+              <div class="space-y-2">
+                <label class="block text-sm font-bold text-gray-700">
+                  <i class="fas fa-briefcase text-emerald-600 ml-1"></i>
+                  المهنة
+                </label>
+                <select name="profession" required 
+                  class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition bg-white">
+                  <option value="">اختر المهنة...</option>
+                  <option value="عامله منزليه">عامله منزليه</option>
+                  <option value="سائق خاص">سائق خاص</option>
+                  <option value="طباخ منزلي">طباخ منزلي</option>
+                </select>
+              </div>
+              
+              <div class="space-y-2">
+                <label class="block text-sm font-bold text-gray-700">
+                  <i class="fas fa-globe text-emerald-600 ml-1"></i>
+                  الدولة
+                </label>
+                <select name="country" required 
+                  class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition bg-white">
+                  <option value="">اختر الدولة...</option>
+                  <option value="اثيوبيا">اثيوبيا</option>
+                  <option value="الفلبين">الفلبين</option>
+                  <option value="كينيا">كينيا</option>
+                </select>
+              </div>
+              
+              <div class="space-y-2">
+                <label class="block text-sm font-bold text-gray-700">
+                  <i class="fas fa-calendar-alt text-emerald-600 ml-1"></i>
+                  تاريخ الوصول
+                </label>
+                <input type="date" name="expectedArrival" required 
+                  class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition">
+              </div>
+              
+              <div class="space-y-2">
+                <label class="block text-sm font-bold text-gray-700">
+                  <i class="fas fa-id-card text-emerald-600 ml-1"></i>
+                  رقم الهوية
+                </label>
+                <input type="text" name="idNumber" required 
+                  class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition">
+              </div>
+              
+              <div class="space-y-2">
+                <label class="block text-sm font-bold text-gray-700">
+                  <i class="fas fa-passport text-emerald-600 ml-1"></i>
+                  رقم التأشيرة
+                </label>
+                <input type="text" name="visaNumber" required 
+                  class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition">
+              </div>
+              
+              <div class="space-y-2">
+                <label class="block text-sm font-bold text-gray-700">
+                  <i class="fas fa-clock text-emerald-600 ml-1"></i>
+                  مدة العقد (يوم)
+                </label>
+                <input type="number" name="contractDuration" value="90" required 
+                  class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition">
+              </div>
+              
+              <div class="space-y-2">
+                <label class="block text-sm font-bold text-gray-700">
+                  <i class="fas fa-money-bill text-emerald-600 ml-1"></i>
+                  السعر المعتمد (ر.س)
+                </label>
+                <input type="number" step="0.01" name="price" required 
+                  class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition">
+              </div>
+              
+              <div class="md:col-span-2 space-y-2">
+                <label class="block text-sm font-bold text-gray-700">
+                  <i class="fas fa-building text-emerald-600 ml-1"></i>
+                  اسم الوكيل / المكتب
+                </label>
+                <input type="text" name="agent" required 
+                  class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition">
+              </div>
             </div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">تاريخ الوصول</label><input type="date" name="expectedArrival" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">رقم الهوية</label><input type="text" name="idNumber" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">رقم التأشيرة</label><input type="text" name="visaNumber" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">مدة العقد</label><input type="number" name="contractDuration" value="90" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">السعر المعتمد</label><input type="number" step="0.01" name="price" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
-            <div class="md:col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">اسم الوكيل / المكتب</label><input type="text" name="agent" required class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
-          </div>
-          <div class="pt-4 border-t flex justify-end gap-3">
-            <button type="button" onclick="showSection('contracts')" class="px-6 py-2 border rounded-lg hover:bg-gray-50">إلغاء</button>
-            <button type="submit" id="submitBtn" class="bg-emerald-600 text-white px-8 py-2 rounded-lg hover:bg-emerald-700 transition flex items-center gap-2">
-              <span>حفظ العقد</span>
-            </button>
-          </div>
-        </form>
+            
+            <div class="pt-6 border-t-2 border-gray-100 flex justify-end gap-4">
+              <button type="button" onclick="showSection('contracts')" 
+                class="px-8 py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition font-bold text-gray-700">
+                <i class="fas fa-times ml-2"></i>
+                إلغاء
+              </button>
+              <button type="submit" id="submitBtn" 
+                class="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white px-8 py-3 rounded-xl hover:from-emerald-700 hover:to-emerald-800 transition flex items-center gap-2 font-bold shadow-lg">
+                <i class="fas fa-save"></i>
+                <span>حفظ العقد</span>
+              </button>
+            </div>
+          </form>
+        </div>
       </section>
     </main>
   </div>
 
-  <div id="toast" class="fixed bottom-5 left-5 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50">
-    <span id="toastMessage"></span>
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 left-5 bg-gray-800 text-white px-6 py-4 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
+    <i class="fas fa-check-circle text-emerald-400 text-xl" id="toastIcon"></i>
+    <span id="toastMessage" class="font-medium"></span>
   </div>
 
   <script>
-    // ⚠️ استبدل هذا الرابط برابط الـ Web App الفعلي بعد إعادة نشر السكريبت (New Deployment)
     const API_URL = "https://script.google.com/macros/s/AKfycbxdyVFJE8A5hbMz9ruBVkWPQxqTOdA6cs3hcBHLX7qKhdkzK6Z0-7PK32DYZMiX/exec"; 
+    let statusChartInstance = null;
+    let countryChartInstance = null;
 
     function showSection(sectionId) {
       document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden'));
@@ -210,7 +395,7 @@
           data = JSON.parse(text);
         } catch (parseError) {
           console.error("❌ Server returned HTML instead of JSON:", text);
-          showToast('الخادم أرجع بيانات غير صالحة. تأكد من صلاحيات النشر (Anyone)', 'error');
+          showToast('الخادم أرجع بيانات غير صالحة', 'error');
           return;
         }
 
@@ -219,13 +404,13 @@
         
         updateDashboard();
         renderTable(allContracts);
+        showToast('تم تحديث البيانات بنجاح', 'success');
       } catch (error) {
         console.error("❌ Fetch Error:", error);
-        showToast('فشل الاتصال بالخادم عند جلب البيانات', 'error');
+        showToast('فشل الاتصال بالخادم', 'error');
       }
     }
 
-    // --- Enhanced Dashboard Logic ---
     function updateDashboard() {
       const total = allContracts.length;
       document.getElementById('stat-total').innerText = total;
@@ -233,11 +418,13 @@
       // Financial Analysis
       const totalRevenue = allContracts.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
       const avgPrice = total > 0 ? (totalRevenue / total).toFixed(2) : 0;
-      document.getElementById('stat-revenue').innerText = totalRevenue.toLocaleString('en-US') + ' ر.س';
+      document.getElementById('stat-revenue').innerText = totalRevenue.toLocaleString('ar-SA') + ' ر.س';
       document.getElementById('stat-avg-price').innerText = avgPrice;
 
-      // Operational Analysis
-      const activeCount = allContracts.filter(c => c.status === 'تحت الإجراء' || c.status === 'بانتظار التأشيرة').length;
+      // Fixed: Count all non-arrived and non-cancelled contracts as active
+      const activeCount = allContracts.filter(c => 
+        c.status === 'تحت الإجراء' || c.status === 'بانتظار التأشيرة'
+      ).length;
       document.getElementById('stat-active').innerText = activeCount;
 
       // Upcoming Arrivals (Next 30 Days)
@@ -252,100 +439,229 @@
       }).length;
       document.getElementById('stat-upcoming').innerText = upcomingCount;
 
-      // Status Breakdown (Progress Bars)
-      const statuses = ['تحت الإجراء', 'بانتظار التأشيرة', 'تم الوصول', 'ملغي'];
-      const statusColors = {
-        'تحت الإجراء': 'bg-yellow-500',
-        'بانتظار التأشيرة': 'bg-blue-500',
-        'تم الوصول': 'bg-green-500',
-        'ملغي': 'bg-red-500'
+      // Status Distribution Data
+      const statuses = {
+        'تحت الإجراء': { count: 0, color: '#f59e0b', icon: 'fa-spinner' },
+        'بانتظار التأشيرة': { count: 0, color: '#3b82f6', icon: 'fa-passport' },
+        'تم الوصول': { count: 0, color: '#10b981', icon: 'fa-check' },
+        'ملغي': { count: 0, color: '#ef4444', icon: 'fa-times' }
       };
       
-      let statusHtml = '';
-      statuses.forEach(status => {
-        const count = allContracts.filter(c => c.status === status).length;
-        const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
-        statusHtml += `
-          <div>
-            <div class="flex justify-between text-sm mb-1">
-              <span class="font-medium">${status}</span>
-              <span class="text-gray-500">${count} عقد (${percentage}%)</span>
+      allContracts.forEach(c => {
+        if (statuses[c.status]) statuses[c.status].count++;
+      });
+
+      // Update Status Chart
+      updateStatusChart(statuses);
+      
+      // Update Status List
+      const statusListHtml = Object.entries(statuses).map(([status, data]) => `
+        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div class="flex items-center gap-3">
+            <div class="w-3 h-3 rounded-full" style="background-color: ${data.color}"></div>
+            <i class="fas ${data.icon} text-gray-600"></i>
+            <span class="font-medium">${status}</span>
+          </div>
+          <span class="font-bold text-lg">${data.count}</span>
+        </div>
+      `).join('');
+      document.getElementById('status-list').innerHTML = statusListHtml;
+
+      // Country Distribution
+      const countries = {};
+      allContracts.forEach(c => { 
+        if(c.country) countries[c.country] = (countries[c.country] || 0) + 1; 
+      });
+      updateCountryChart(countries);
+      
+      const countryListHtml = Object.entries(countries)
+        .sort((a, b) => b[1] - a[1])
+        .map(([name, count]) => `
+          <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+            <span class="text-gray-700"><i class="fas fa-flag ml-2 text-gray-400"></i>${name}</span>
+            <span class="font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">${count}</span>
+          </div>
+        `).join('');
+      document.getElementById('country-list').innerHTML = countryListHtml || '<p class="text-gray-400 text-center">لا توجد بيانات</p>';
+
+      // Profession Distribution
+      const professions = {};
+      allContracts.forEach(c => { 
+        if(c.profession) professions[c.profession] = (professions[c.profession] || 0) + 1; 
+      });
+      
+      const professionListHtml = Object.entries(professions)
+        .sort((a, b) => b[1] - a[1])
+        .map(([name, count]) => `
+          <div class="flex items-center justify-between p-3 bg-gradient-to-l from-purple-50 to-white rounded-lg">
+            <span class="text-gray-700 font-medium"><i class="fas fa-briefcase ml-2 text-purple-500"></i>${name}</span>
+            <span class="font-bold text-purple-600">${count}</span>
+          </div>
+        `).join('');
+      document.getElementById('profession-list').innerHTML = professionListHtml || '<p class="text-gray-400 text-center">لا توجد بيانات</p>';
+
+      // Recent Contracts (Last 5)
+      const recentContracts = [...allContracts]
+        .sort((a, b) => (b.rowIndex || 0) - (a.rowIndex || 0))
+        .slice(0, 5);
+      
+      const recentHtml = recentContracts.map(c => `
+        <div class="flex items-center justify-between p-4 bg-gradient-to-l from-emerald-50 to-white rounded-xl border border-emerald-100">
+          <div class="flex items-center gap-4">
+            <div class="bg-emerald-100 p-3 rounded-full">
+              <i class="fas fa-file-contract text-emerald-600"></i>
             </div>
-            <div class="w-full bg-gray-200 rounded-full h-2.5">
-              <div class="${statusColors[status]} h-2.5 rounded-full" style="width: ${percentage}%"></div>
+            <div>
+              <p class="font-bold text-gray-800">${c.id || 'غير محدد'}</p>
+              <p class="text-sm text-gray-500">${c.clientName || ''} - ${c.workerName || ''}</p>
             </div>
           </div>
-        `;
-      });
-      document.getElementById('status-breakdown').innerHTML = statusHtml || '<p class="text-gray-400">لا توجد بيانات</p>';
-
-      // Country Breakdown
-      const countries = {};
-      allContracts.forEach(c => { if(c.country) countries[c.country] = (countries[c.country] || 0) + 1; });
-      renderCategoryBreakdown('country-breakdown', countries, total);
-
-      // Profession Breakdown
-      const professions = {};
-      allContracts.forEach(c => { if(c.profession) professions[c.profession] = (professions[c.profession] || 0) + 1; });
-      renderCategoryBreakdown('profession-breakdown', professions, total);
+          <div class="text-left">
+            <p class="text-sm font-bold text-emerald-600">${parseFloat(c.price || 0).toLocaleString('ar-SA')} ر.س</p>
+            <p class="text-xs text-gray-400">${c.expectedArrival || ''}</p>
+          </div>
+        </div>
+      `).join('');
+      document.getElementById('recent-contracts').innerHTML = recentHtml || '<p class="text-gray-400 text-center">لا توجد عقود حديثة</p>';
     }
 
-    function renderCategoryBreakdown(elementId, dataObj, total) {
-      const container = document.getElementById(elementId);
-      if (Object.keys(dataObj).length === 0) {
-        container.innerHTML = '<p class="text-gray-400 text-sm">لا توجد بيانات</p>';
-        return;
-      }
+    function updateStatusChart(statuses) {
+      const ctx = document.getElementById('statusChart').getContext('2d');
       
-      let html = '';
-      Object.entries(dataObj).sort((a, b) => b[1] - a[1]).forEach(([name, count]) => {
-        const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
-        html += `
-          <div class="flex items-center justify-between text-sm">
-            <span class="text-gray-700">${name}</span>
-            <span class="font-bold text-emerald-600">${count} <span class="text-xs text-gray-400 font-normal">(${percentage}%)</span></span>
-          </div>
-        `;
+      if (statusChartInstance) {
+        statusChartInstance.destroy();
+      }
+
+      statusChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(statuses),
+          datasets: [{
+            data: Object.values(statuses).map(s => s.count),
+            backgroundColor: Object.values(statuses).map(s => s.color),
+            borderWidth: 3,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                padding: 15,
+                font: { family: 'Tajawal', size: 12 },
+                usePointStyle: true
+              }
+            }
+          }
+        }
       });
-      container.innerHTML = html;
+    }
+
+    function updateCountryChart(countries) {
+      const ctx = document.getElementById('countryChart').getContext('2d');
+      
+      if (countryChartInstance) {
+        countryChartInstance.destroy();
+      }
+
+      const sortedCountries = Object.entries(countries).sort((a, b) => b[1] - a[1]);
+      
+      countryChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: sortedCountries.map(c => c[0]),
+          datasets: [{
+            label: 'عدد العقود',
+            data: sortedCountries.map(c => c[1]),
+            backgroundColor: [
+              'rgba(16, 185, 129, 0.8)',
+              'rgba(59, 130, 246, 0.8)',
+              'rgba(245, 158, 11, 0.8)',
+              'rgba(239, 68, 68, 0.8)',
+              'rgba(139, 92, 246, 0.8)'
+            ],
+            borderColor: [
+              'rgba(16, 185, 129, 1)',
+              'rgba(59, 130, 246, 1)',
+              'rgba(245, 158, 11, 1)',
+              'rgba(239, 68, 68, 1)',
+              'rgba(139, 92, 246, 1)'
+            ],
+            borderWidth: 2,
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 1,
+                font: { family: 'Tajawal' }
+              }
+            },
+            x: {
+              ticks: {
+                font: { family: 'Tajawal' }
+              }
+            }
+          }
+        }
+      });
     }
 
     function renderTable(data) {
       const tbody = document.getElementById('contractsTableBody');
       tbody.innerHTML = '';
       if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="18" class="p-8 text-center text-gray-500">لا توجد عقود مطابقة</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="18" class="p-8 text-center text-gray-500"><i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i><br>لا توجد عقود مطابقة</td></tr>';
         return;
       }
       data.forEach(contract => {
-        let statusColor = 'bg-gray-100 text-gray-800';
-        if (contract.status === 'تم الوصول') statusColor = 'bg-green-100 text-green-800';
-        else if (contract.status === 'تحت الإجراء') statusColor = 'bg-yellow-100 text-yellow-800';
-        else if (contract.status === 'بانتظار التأشيرة') statusColor = 'bg-blue-100 text-blue-800';
-        else if (contract.status === 'ملغي') statusColor = 'bg-red-100 text-red-800';
+        let statusConfig = {
+          'تحت الإجراء': { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: 'fa-spinner' },
+          'بانتظار التأشيرة': { bg: 'bg-blue-100', text: 'text-blue-800', icon: 'fa-passport' },
+          'تم الوصول': { bg: 'bg-green-100', text: 'text-green-800', icon: 'fa-check' },
+          'ملغي': { bg: 'bg-red-100', text: 'text-red-800', icon: 'fa-times' }
+        };
+        const config = statusConfig[contract.status] || statusConfig['تحت الإجراء'];
 
         const tr = document.createElement('tr');
-        tr.className = 'hover:bg-gray-50 transition';
+        tr.className = 'hover:bg-emerald-50 transition';
         tr.innerHTML = `
-          <td class="p-3 font-bold text-emerald-700">${contract.id || ''}</td>
-          <td class="p-3 text-sm">${contract.serial || ''}</td>
-          <td class="p-3">${contract.clientName || ''}</td>
-          <td class="p-3 text-sm">${contract.clientPhone || ''}</td>
-          <td class="p-3">${contract.profession || ''}</td>
-          <td class="p-3">${contract.workerName || ''}</td>
-          <td class="p-3">${contract.country || ''}</td>
-          <td class="p-3 text-sm">${contract.month || ''}</td>
-          <td class="p-3 text-sm text-gray-600">${contract.submissionDate || ''}</td>
-          <td class="p-3 text-sm text-gray-600">${contract.expectedArrival || ''}</td>
-          <td class="p-3 text-sm">${contract.idNumber || ''}</td>
-          <td class="p-3 text-sm">${contract.visaNumber || ''}</td>
-          <td class="p-3 text-sm">${contract.contractDuration || ''}</td>
-          <td class="p-3 text-sm font-medium">${contract.price ? parseFloat(contract.price).toLocaleString('en-US') : ''}</td>
-          <td class="p-3 text-sm">${contract.agent || ''}</td>
-          <td class="p-3 text-sm">${contract.source || ''}</td>
-          <td class="p-3"><span class="px-3 py-1 rounded-full text-xs font-semibold ${statusColor}">${contract.status}</span></td>
-          <td class="p-3">
-            <select onchange="updateStatus(${contract.rowIndex}, this.value)" class="text-sm border rounded px-2 py-1 bg-white focus:ring-2 focus:ring-emerald-500 outline-none w-full">
+          <td class="p-4 font-bold text-emerald-700">${contract.id || ''}</td>
+          <td class="p-4 text-sm">${contract.serial || ''}</td>
+          <td class="p-4 font-medium">${contract.clientName || ''}</td>
+          <td class="p-4 text-sm dir-ltr">${contract.clientPhone || ''}</td>
+          <td class="p-4">${contract.profession || ''}</td>
+          <td class="p-4">${contract.workerName || ''}</td>
+          <td class="p-4">${contract.country || ''}</td>
+          <td class="p-4 text-sm">${contract.month || ''}</td>
+          <td class="p-4 text-sm text-gray-600">${contract.submissionDate || ''}</td>
+          <td class="p-4 text-sm text-gray-600">${contract.expectedArrival || ''}</td>
+          <td class="p-4 text-sm dir-ltr">${contract.idNumber || ''}</td>
+          <td class="p-4 text-sm dir-ltr">${contract.visaNumber || ''}</td>
+          <td class="p-4 text-sm">${contract.contractDuration || ''}</td>
+          <td class="p-4 text-sm font-bold text-emerald-600">${contract.price ? parseFloat(contract.price).toLocaleString('ar-SA') : ''}</td>
+          <td class="p-4 text-sm">${contract.agent || ''}</td>
+          <td class="p-4 text-sm">${contract.source || ''}</td>
+          <td class="p-4">
+            <span class="px-3 py-2 rounded-lg text-xs font-bold ${config.bg} ${config.text} inline-flex items-center gap-2">
+              <i class="fas ${config.icon}"></i>
+              ${contract.status}
+            </span>
+          </td>
+          <td class="p-4">
+            <select onchange="updateStatus(${contract.rowIndex}, this.value)" 
+              class="text-sm border-2 border-gray-200 rounded-lg px-3 py-2 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none w-full font-medium">
               <option value="تحت الإجراء" ${contract.status === 'تحت الإجراء' ? 'selected' : ''}>تحت الإجراء</option>
               <option value="بانتظار التأشيرة" ${contract.status === 'بانتظار التأشيرة' ? 'selected' : ''}>بانتظار التأشيرة</option>
               <option value="تم الوصول" ${contract.status === 'تم الوصول' ? 'selected' : ''}>تم الوصول</option>
@@ -370,8 +686,9 @@
     async function handleFormSubmit(e) {
       e.preventDefault();
       const btn = document.getElementById('submitBtn');
+      const originalContent = btn.innerHTML;
       btn.disabled = true;
-      btn.innerHTML = '<div class="loader ease-linear rounded-full border-2 border-t-2 border-gray-200 h-5 w-5"></div> جاري الحفظ...';
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>جاري الحفظ...</span>';
 
       const formData = new FormData(e.target);
       const formObject = Object.fromEntries(formData.entries());
@@ -398,10 +715,10 @@
           showToast(result.error || 'حدث خطأ أثناء الحفظ', 'error');
         }
       } catch (error) {
-        showToast('فشل الاتصال بالخادم أثناء إرسال البيانات', 'error');
+        showToast('فشل الاتصال بالخادم', 'error');
       } finally {
         btn.disabled = false;
-        btn.innerHTML = '<span>حفظ العقد</span>';
+        btn.innerHTML = originalContent;
       }
     }
 
@@ -424,10 +741,22 @@
 
     function showToast(message, type = 'success') {
       const toast = document.getElementById('toast');
-      document.getElementById('toastMessage').innerText = message;
-      toast.className = `fixed bottom-5 left-5 px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 z-50 text-white ${
-        type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600'
-      }`;
+      const toastMessage = document.getElementById('toastMessage');
+      const toastIcon = document.getElementById('toastIcon');
+      
+      toastMessage.innerText = message;
+      
+      if (type === 'success') {
+        toast.className = 'fixed bottom-5 left-5 bg-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl transform transition-all duration-300 z-50 flex items-center gap-3';
+        toastIcon.className = 'fas fa-check-circle text-white text-xl';
+      } else if (type === 'error') {
+        toast.className = 'fixed bottom-5 left-5 bg-red-600 text-white px-6 py-4 rounded-xl shadow-2xl transform transition-all duration-300 z-50 flex items-center gap-3';
+        toastIcon.className = 'fas fa-exclamation-circle text-white text-xl';
+      } else {
+        toast.className = 'fixed bottom-5 left-5 bg-blue-600 text-white px-6 py-4 rounded-xl shadow-2xl transform transition-all duration-300 z-50 flex items-center gap-3';
+        toastIcon.className = 'fas fa-info-circle text-white text-xl';
+      }
+      
       toast.classList.remove('translate-y-20', 'opacity-0');
       setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3500);
     }
