@@ -1,3 +1,8 @@
+إليك كود الـ **HTML الكامل والمعدّل جاهزاً للنسخ** لصفحة `index.html` الخاصة بك على GitHub Pages.
+
+تم دمج كافة تحسينات الأمان، وحل مشكلة الـ **CORS** بشكل نهائي لضمان اتصال سليم وسلس مع كود الـ Google Apps Script الذي قمنا بتعديله:
+
+```html
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
@@ -17,7 +22,6 @@
 <body class="text-gray-800">
 
   <div class="flex h-screen overflow-hidden">
-    <!-- القائمة الجانبية -->
     <aside class="w-64 bg-white shadow-lg hidden md:flex flex-col">
       <div class="p-6 text-center border-b">
         <h1 class="text-2xl font-bold text-emerald-600">نظام الاستقدام</h1>
@@ -31,7 +35,6 @@
     </aside>
 
     <main class="flex-1 overflow-y-auto p-4 md:p-8">
-      <!-- قسم لوحة التحكم -->
       <section id="dashboard" class="space-y-6">
         <h2 class="text-2xl font-bold mb-4">نظرة عامة</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -50,7 +53,6 @@
         </div>
       </section>
 
-      <!-- قسم إدارة العقود -->
       <section id="contracts" class="hidden space-y-6">
         <div class="flex justify-between items-center">
           <h2 class="text-2xl font-bold">سجل العقود</h2>
@@ -74,7 +76,6 @@
         </div>
       </section>
 
-      <!-- قسم إضافة عقد جديد -->
       <section id="add" class="hidden max-w-3xl mx-auto">
         <h2 class="text-2xl font-bold mb-6">تسجيل عقد استقدام جديد</h2>
         <form id="contractForm" onsubmit="handleFormSubmit(event)" class="bg-white p-8 rounded-xl shadow-sm space-y-6">
@@ -121,8 +122,8 @@
   </div>
 
   <script>
-    // ⚠️ هام جداً: استبدل هذا الرابط برابط نشر تطبيق الويب الخاص بك من Google Apps Script
-    const API_URL = "https://script.google.com/macros/s/AKfycbznAkdSxnUcpbTspKUJdspY1M-WvRhHp-IRic7g0KIAL4IoJBu3vPQ9xHCwIf8y3W4/exec"; 
+    // ⚠️ تنبيه: إذا قمت بعمل إصدار جديد (New Deployment) في Apps Script، استبدل الرابط أدناه بالرابط الجديد
+    const API_URL = "https://script.google.com/macros/s/AKfycbzWQAZDdwblJoN7C2WVMQhLl0zUuEs-qO2J5S2zKilGLdYr-NKVtyvHUQteB0PesoI/exec"; 
 
     function showSection(sectionId) {
       document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden'));
@@ -143,7 +144,7 @@
         updateDashboard();
         renderTable(allContracts);
       } catch (error) {
-        showToast('فشل الاتصال بالخادم', 'error');
+        showToast('فشل الاتصال بالخادم عند جلب البيانات', 'error');
       }
     }
 
@@ -164,17 +165,18 @@
         let statusColor = 'bg-gray-100 text-gray-800';
         if (contract.status === 'تم الوصول') statusColor = 'bg-green-100 text-green-800';
         else if (contract.status === 'تحت الإجراء') statusColor = 'bg-yellow-100 text-yellow-800';
+        else if (contract.status === 'بانتظار التأشيرة') statusColor = 'bg-blue-100 text-blue-800';
         else if (contract.status === 'ملغي') statusColor = 'bg-red-100 text-red-800';
 
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-gray-50 transition';
         tr.innerHTML = `
-          <td class="p-4 font-medium text-emerald-700">${contract.id}</td>
-          <td class="p-4">${contract.clientName}</td>
-          <td class="p-4">${contract.profession}</td>
-          <td class="p-4">${contract.country}</td>
-          <td class="p-4 text-sm text-gray-600">${contract.submissionDate}</td>
-          <td class="p-4"><span class="px-3 py-1 rounded-full text-xs font-semibold ${statusColor}">${contract.status}</span></td>
+          <td class="p-4 font-medium text-emerald-700">${contract.id || ''}</td>
+          <td class="p-4">${contract.clientName || ''}</td>
+          <td class="p-4">${contract.profession || ''}</td>
+          <td class="p-4">${contract.country || ''}</td>
+          <td class="p-4 text-sm text-gray-600">${contract.submissionDate || ''}</td>
+          <td class="p-4"><span class="px-3 py-1 rounded-full text-xs font-semibold ${statusColor}">${contract.status || 'تحت الإجراء'}</span></td>
           <td class="p-4">
             <select onchange="updateStatus(${contract.rowIndex}, this.value)" class="text-sm border rounded px-2 py-1 bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
               <option value="تحت الإجراء" ${contract.status === 'تحت الإجراء' ? 'selected' : ''}>تحت الإجراء</option>
@@ -190,9 +192,13 @@
 
     function filterTable() {
       const query = document.getElementById('searchInput').value.toLowerCase();
-      renderTable(allContracts.filter(c => c.id.toLowerCase().includes(query) || c.clientName.toLowerCase().includes(query)));
+      renderTable(allContracts.filter(c => 
+        (c.id && c.id.toLowerCase().includes(query)) || 
+        (c.clientName && c.clientName.toLowerCase().includes(query))
+      ));
     }
 
+    // تم تحديث الدالة لتجنب الـ CORS والـ OPTIONS Preflight بشكل كامل
     async function handleFormSubmit(e) {
       e.preventDefault();
       const btn = document.getElementById('submitBtn');
@@ -205,6 +211,11 @@
       try {
         const response = await fetch(API_URL, {
           method: 'POST',
+          mode: 'cors',
+          redirect: 'follow',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8' // إرسال كنص خام لتخطي حظر المتصفح
+          },
           body: JSON.stringify({ action: 'add', data: formObject })
         });
         const result = await response.json();
@@ -214,40 +225,50 @@
           showToast(result.message, 'success');
           showSection('contracts');
         } else {
-          showToast(result.error || 'حدث خطأ', 'error');
+          showToast(result.error || 'حدث خطأ أثناء الحفظ', 'error');
         }
       } catch (error) {
-        showToast('فشل الاتصال بالخادم', 'error');
+        showToast('فشل الاتصال بالخادم أثناء إرسال البيانات', 'error');
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<span>حفظ العقد</span>';
       }
     }
 
+    // تم تحديث دالة تغيير الحالة لتتوافق مع معايير الكورس والنص الخام
     async function updateStatus(rowIndex, newStatus) {
-      showToast('جاري التحديث...', 'info');
+      showToast('جاري التحديث واستصدار التنبيهات...', 'info');
       try {
         const response = await fetch(API_URL, {
           method: 'POST',
+          mode: 'cors',
+          redirect: 'follow',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
           body: JSON.stringify({ action: 'update', rowIndex: rowIndex, newStatus: newStatus })
         });
         const result = await response.json();
         showToast(result.message, result.success ? 'success' : 'error');
         if (result.success) loadData();
       } catch (error) {
-        showToast('فشل الاتصال بالخادم', 'error');
+        showToast('فشل الاتصال بالخادم، لم يتم تحديث الحالة', 'error');
       }
     }
 
     function showToast(message, type = 'success') {
       const toast = document.getElementById('toast');
       document.getElementById('toastMessage').innerText = message;
-      toast.className = `fixed bottom-5 left-5 px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 z-50 text-white ${type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600'}`;
+      toast.className = `fixed bottom-5 left-5 px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 z-50 text-white ${
+        type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600'
+      }`;
       toast.classList.remove('translate-y-20', 'opacity-0');
-      setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+      setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3500);
     }
 
     window.onload = () => loadData();
   </script>
 </body>
 </html>
+
+```
