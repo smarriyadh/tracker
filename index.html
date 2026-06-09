@@ -385,6 +385,38 @@
     }
 
     let allContracts = [];
+
+// ✅ ADD THIS NEW FUNCTION HERE
+function filterAndShowContracts(filterType, filterValue) {
+  showSection('contracts');
+  const searchInput = document.getElementById('searchInput');
+  
+  if (filterType === 'contractId') {
+    searchInput.value = filterValue;
+    searchInput.placeholder = `🔍 عرض العقد: ${filterValue}`;
+  } else if (filterType === 'status') {
+    const filtered = allContracts.filter(c => c.status === filterValue);
+    renderTable(filtered);
+    searchInput.value = '';
+    searchInput.placeholder = `🔍 تصفية حسب الحالة: ${filterValue}`;
+  } else if (filterType === 'country') {
+    const filtered = allContracts.filter(c => c.country === filterValue);
+    renderTable(filtered);
+    searchInput.value = '';
+    searchInput.placeholder = `🔍 تصفية حسب الدولة: ${filterValue}`;
+  } else if (filterType === 'profession') {
+    const filtered = allContracts.filter(c => c.profession === filterValue);
+    renderTable(filtered);
+    searchInput.value = '';
+    searchInput.placeholder = `🔍 تصفية حسب المهنة: ${filterValue}`;
+  }
+  
+  if (!filterType) {
+    renderTable(allContracts);
+    searchInput.value = '';
+    searchInput.placeholder = '🔍 بحث (الاسم، الرقم، الجوال، العاملة)...';
+  }
+}
     
     async function loadData() {
       try {
