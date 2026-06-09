@@ -89,7 +89,7 @@
         
         <!-- Key Metrics -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div class="stat-card bg-white p-6 rounded-2xl shadow-lg border-r-4 border-emerald-500">
+          <div class="stat-card bg-white p-6 rounded-2xl shadow-lg border-r-4 border-emerald-500 cursor-pointer" onclick="filterAndShowContracts('all')">
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-gray-500 text-sm font-medium">إجمالي العقود</p>
@@ -102,7 +102,7 @@
             </div>
           </div>
 
-          <div class="stat-card bg-white p-6 rounded-2xl shadow-lg border-r-4 border-yellow-500">
+          <div class="stat-card bg-white p-6 rounded-2xl shadow-lg border-r-4 border-yellow-500 cursor-pointer" onclick="filterAndShowContracts('active')">
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-gray-500 text-sm font-medium">العقود النشطة</p>
@@ -115,7 +115,7 @@
             </div>
           </div>
 
-          <div class="stat-card bg-white p-6 rounded-2xl shadow-lg border-r-4 border-green-500">
+          <div class="stat-card bg-white p-6 rounded-2xl shadow-lg border-r-4 border-green-500 cursor-pointer" onclick="filterAndShowContracts('upcoming')">
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-gray-500 text-sm font-medium">الوصول القادم</p>
@@ -186,27 +186,21 @@
         <div class="bg-white rounded-2xl shadow-lg overflow-hidden table-responsive">
           <table class="w-full text-right whitespace-nowrap">
             <thead class="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-bold">
-              <tr>
-                <th class="p-4 min-w-[120px]">رقم العقد</th>
-                <th class="p-4">م</th>
-                <th class="p-4">اسم العميل</th>
-                <th class="p-4">رقم العميل</th>
-                <th class="p-4">المهنة</th>
-                <th class="p-4">اسم العاملة</th>
-                <th class="p-4">الدولة</th>
-                <th class="p-4">الشهر</th>
-                <th class="p-4">تاريخ التقديم</th>
-                <th class="p-4">تاريخ الوصول</th>
-                <th class="p-4">رقم الهوية</th>
-                <th class="p-4">رقم التأشيرة</th>
-                <th class="p-4">المدة</th>
-                <th class="p-4">السعر</th>
-                <th class="p-4">الوكيل</th>
-                <th class="p-4">المصدر</th>
-                <th class="p-4 min-w-[140px]">الحالة</th>
-                <th class="p-4 min-w-[140px]">إجراء</th>
-              </tr>
-            </thead>
+  <tr>
+    <th class="p-2 border border-emerald-500 min-w-[100px]">رقم العقد</th>
+    <th class="p-2 border border-emerald-500">اسم العميل</th>
+    <th class="p-2 border border-emerald-500">رقم الهوية</th>
+    <th class="p-2 border border-emerald-500">رقم العميل</th>
+    <th class="p-2 border border-emerald-500">اسم العاملة</th>
+    <th class="p-2 border border-emerald-500">رقم التأشيرة</th>
+    <th class="p-2 border border-emerald-500">المهنة</th>
+    <th class="p-2 border border-emerald-500">الدولة</th>
+    <th class="p-2 border border-emerald-500">تاريخ التقديم</th>
+    <th class="p-2 border border-emerald-500">تاريخ الوصول</th>
+    <th class="p-2 border border-emerald-500">الوكيل</th>
+    <th class="p-2 border border-emerald-500 min-w-[160px]">الحالة / إجراء</th>
+  </tr>
+</thead>
             <tbody id="contractsTableBody" class="divide-y divide-gray-100"></tbody>
           </table>
         </div>
@@ -390,10 +384,32 @@
       showSection('contracts');
       const searchInput = document.getElementById('searchInput');
       
-      if (filterType === 'contractId') {
-        searchInput.value = filterValue;
-        searchInput.placeholder = `🔍 عرض العقد: ${filterValue}`;
-        filterTable();
+      if (filterType === 'all') {
+  renderTable(allContracts);
+  searchInput.value = '';
+  searchInput.placeholder = '🔍 عرض جميع العقود';
+} else if (filterType === 'active') {
+  const filtered = allContracts.filter(c => c.status !== 'تم الوصول' && c.status !== 'ملغي');
+  renderTable(filtered);
+  searchInput.value = '';
+  searchInput.placeholder = '🔍 تصفية: العقود النشطة';
+} else if (filterType === 'upcoming') {
+  const today = new Date();
+  const nextMonth = new Date();
+  nextMonth.setDate(today.getDate() + 30);
+  const filtered = allContracts.filter(c => {
+    if (!c.expectedArrival) return false;
+    const arrDate = new Date(c.expectedArrival);
+    return arrDate >= today && arrDate <= nextMonth;
+  });
+  renderTable(filtered);
+  searchInput.value = '';
+  searchInput.placeholder = '🔍 تصفية: الوصول القادم (30 يوم)';
+} else if (filterType === 'contractId') {
+  searchInput.value = filterValue;
+  searchInput.placeholder = `🔍 عرض العقد: ${filterValue}`;
+  filterTable();
+}
       } else if (filterType === 'status') {
         const filtered = allContracts.filter(c => c.status === filterValue);
         renderTable(filtered);
@@ -672,7 +688,7 @@
       const tbody = document.getElementById('contractsTableBody');
       tbody.innerHTML = '';
       if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="18" class="p-8 text-center text-gray-500"><i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i><br>لا توجد عقود مطابقة</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="12" class="p-8 text-center text-gray-500"><i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i><br>لا توجد عقود مطابقة</td></tr>';
         return;
       }
       
@@ -689,39 +705,32 @@
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-emerald-50 transition';
         tr.innerHTML = `
-          <td class="p-4 font-bold text-emerald-700 contract-id-clickable" onclick="showContractDetails('${contract.id}')">${contract.id || ''}</td>
-          <td class="p-4 text-sm">${contract.serial || ''}</td>
-          <td class="p-4 font-medium">${contract.clientName || ''}</td>
-          <td class="p-4 text-sm dir-ltr">${contract.clientPhone || ''}</td>
-          <td class="p-4">${contract.profession || ''}</td>
-          <td class="p-4">${contract.workerName || ''}</td>
-          <td class="p-4">${contract.country || ''}</td>
-          <td class="p-4 text-sm">${contract.month || ''}</td>
-          <td class="p-4 text-sm text-gray-600">${contract.submissionDate || ''}</td>
-          <td class="p-4 text-sm text-gray-600">${contract.expectedArrival || ''}</td>
-          <td class="p-4 text-sm dir-ltr">${contract.idNumber || ''}</td>
-          <td class="p-4 text-sm dir-ltr">${contract.visaNumber || ''}</td>
-          <td class="p-4 text-sm">${contract.contractDuration || ''}</td>
-          <td class="p-4 text-sm font-bold text-emerald-600">${contract.price ? parseFloat(contract.price).toLocaleString('ar-SA') : ''}</td>
-          <td class="p-4 text-sm">${contract.agent || ''}</td>
-          <td class="p-4 text-sm">${contract.source || ''}</td>
-          <td class="p-4">
-            <span class="px-3 py-2 rounded-lg text-xs font-bold ${config.bg} ${config.text} inline-flex items-center gap-2">
-              <i class="fas ${config.icon}"></i>
-              ${contract.status || 'مرفوع'}
-            </span>
-          </td>
-          <td class="p-4">
-            <select onchange="updateStatus(${contract.rowIndex}, this.value)" 
-              class="text-sm border-2 border-gray-200 rounded-lg px-3 py-2 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none w-full font-medium">
-              <option value="مرفوع" ${contract.status === 'مرفوع' ? 'selected' : ''}>مرفوع</option>
-              <option value="تحت الإجراء" ${contract.status === 'تحت الإجراء' ? 'selected' : ''}>تحت الإجراء</option>
-              <option value="بانتظار التأشيرة" ${contract.status === 'بانتظار التأشيرة' ? 'selected' : ''}>بانتظار التأشيرة</option>
-              <option value="تم الوصول" ${contract.status === 'تم الوصول' ? 'selected' : ''}>تم الوصول</option>
-              <option value="ملغي" ${contract.status === 'ملغي' ? 'selected' : ''}>ملغي</option>
-            </select>
-          </td>
-        `;
+  <td class="p-2 border border-gray-200 font-bold text-emerald-700 contract-id-clickable" onclick="showContractDetails('${contract.id}')">${contract.id || ''}</td>
+  <td class="p-2 border border-gray-200 font-medium">${contract.clientName || ''}</td>
+  <td class="p-2 border border-gray-200 text-sm dir-ltr">${contract.idNumber || ''}</td>
+  <td class="p-2 border border-gray-200 text-sm dir-ltr">${contract.clientPhone || ''}</td>
+  <td class="p-2 border border-gray-200">${contract.workerName || ''}</td>
+  <td class="p-2 border border-gray-200 text-sm dir-ltr">${contract.visaNumber || ''}</td>
+  <td class="p-2 border border-gray-200">${contract.profession || ''}</td>
+  <td class="p-2 border border-gray-200">${contract.country || ''}</td>
+  <td class="p-2 border border-gray-200 text-xs text-gray-600">${contract.submissionDate || ''}</td>
+  <td class="p-2 border border-gray-200 text-xs text-gray-600">${contract.expectedArrival || ''}</td>
+  <td class="p-2 border border-gray-200 text-sm">${contract.agent || ''}</td>
+  <td class="p-2 border border-gray-200">
+    <div class="flex flex-col gap-1">
+      <span class="px-2 py-1 rounded text-xs font-bold ${config.bg} ${config.text} inline-flex items-center justify-center gap-1 w-full">
+        <i class="fas ${config.icon}"></i> ${contract.status || 'مرفوع'}
+      </span>
+      <select onchange="updateStatus(${contract.rowIndex}, this.value)" class="text-xs border border-gray-300 rounded px-1 py-1 bg-white focus:border-emerald-500 outline-none w-full">
+        <option value="مرفوع" ${contract.status === 'مرفوع' ? 'selected' : ''}>مرفوع</option>
+        <option value="تحت الإجراء" ${contract.status === 'تحت الإجراء' ? 'selected' : ''}>تحت الإجراء</option>
+        <option value="بانتظار التأشيرة" ${contract.status === 'بانتظار التأشيرة' ? 'selected' : ''}>بانتظار التأشيرة</option>
+        <option value="تم الوصول" ${contract.status === 'تم الوصول' ? 'selected' : ''}>تم الوصول</option>
+        <option value="ملغي" ${contract.status === 'ملغي' ? 'selected' : ''}>ملغي</option>
+      </select>
+    </div>
+  </td>
+`;
         tbody.appendChild(tr);
       });
     }
