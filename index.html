@@ -623,14 +623,14 @@
         return;
       }
       data.forEach(contract => {
-        let statusConfig = {
-          'تحت الإجراء': { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: 'fa-spinner' },
-          'بانتظار التأشيرة': { bg: 'bg-blue-100', text: 'text-blue-800', icon: 'fa-passport' },
-          'تم الوصول': { bg: 'bg-green-100', text: 'text-green-800', icon: 'fa-check' },
-          'ملغي': { bg: 'bg-red-100', text: 'text-red-800', icon: 'fa-times' }
-        };
-        const config = statusConfig[contract.status] || statusConfig['تحت الإجراء'];
-
+<select onchange="updateStatus(${contract.rowIndex}, this.value)" 
+  class="text-sm border-2 border-gray-200 rounded-lg px-3 py-2 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none w-full font-medium">
+  <option value="مرفوع" ${contract.status === 'مرفوع' ? 'selected' : ''}>مرفوع</option>
+  <option value="تحت الإجراء" ${contract.status === 'تحت الإجراء' ? 'selected' : ''}>تحت الإجراء</option>
+  <option value="بانتظار التأشيرة" ${contract.status === 'بانتظار التأشيرة' ? 'selected' : ''}>بانتظار التأشيرة</option>
+  <option value="تم الوصول" ${contract.status === 'تم الوصول' ? 'selected' : ''}>تم الوصول</option>
+  <option value="ملغي" ${contract.status === 'ملغي' ? 'selected' : ''}>ملغي</option>
+</select>
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-emerald-50 transition';
         tr.innerHTML = `
