@@ -678,12 +678,14 @@
       });
     }
 
-    function showContractDetails(contractId) {
-      const contract = allContracts.find(c => c.id === contractId);
-      if (!contract) {
-        showToast('لم يتم العثور على العقد', 'error');
-        return;
-      }
+    function showContractDetails(element) {
+  const contractId = element.getAttribute('data-contract-id');
+  const contract = allContracts.find(c => c.id === contractId);
+  
+  if (!contract) {
+    showToast('لم يتم العثور على العقد', 'error');
+    return;
+  }
 
       document.getElementById('modal-contract-id').innerText = `رقم العقد: ${contract.id}`;
       
