@@ -384,6 +384,9 @@
   showSection('contracts');
   const searchInput = document.getElementById('searchInput');
   
+  // Save current filter
+  currentFilter = { type: filterType, value: filterValue };
+  
   if (filterType === 'all') {
     renderTable(allContracts);
     searchInput.value = '';
@@ -431,36 +434,66 @@
   }
 }
     let allContracts = [];
+    let currentFilter = { type: 'all', value: null }; // Track current filter
     
     async function loadData() {
-      try {
-        const response = await fetch(API_URL + '?t=' + new Date().getTime(), {
-          method: 'GET',
-          redirect: 'follow'
-        });
-        
-        const text = await response.text();
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch (parseError) {
-          console.error("❌ Server returned HTML instead of JSON:", text);
-          showToast('الخادم أرجع بيانات غير صالحة', 'error');
-          return;
-        }
-
-        if (data.error) { showToast(data.error, 'error'); return; }
-        allContracts = Array.isArray(data) ? data : [];
-        
-        updateDashboard();
-        renderTable(allContracts);
-        showToast('تم تحديث البيانات بنجاح', 'success');
-      } catch (error) {
-        console.error("❌ Fetch Error:", error);
-        showToast('فشل الاتصال بالخادم', 'error');
-      }
+  try {
+    const response = await fetch(API_URL + '?t=' + new Date().getTime(), {
+      method: 'GET',
+      redirect: 'follow'
+    });
+    
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseError) {
+      console.error("❌ Server returned HTML instead of JSON:", text);
+      showToast('الخادم أرجع بيانات غير صالحة', 'error');
+      return;
     }
 
+    if (data.error) { showToast(data.error, 'error'); return; }
+    allContracts = Array.isArray(data) ? data : [];
+    
+    updateDashboard();
+    
+    // Reapply current filter after loading new data
+    if (currentFilter.type === 'all') {
+      renderTable(allContracts);
+    } else if (currentFilter.type === 'active') {
+      const filtered = allContracts.filter(c => c.status !== 'تم الوصول' && c.status !== 'ملغي');
+      renderTable(filtered);
+    } else if (currentFilter.type === 'upcoming') {
+      const today = new Date();
+      const nextMonth = new Date();
+      nextMonth.setDate(today.getDate() + 30);
+      const filtered = allContracts.filter(c => {
+        if (!c.expectedArrival) return false;
+        const arrDate = new Date(c.expectedArrival);
+        return arrDate >= today && arrDate <= nextMonth;
+      });
+      renderTable(filtered);
+    } else if (currentFilter.type === 'contractId') {
+      filterTable();
+    } else if (currentFilter.type === 'status') {
+      const filtered = allContracts.filter(c => c.status === currentFilter.value);
+      renderTable(filtered);
+    } else if (currentFilter.type === 'country') {
+      const filtered = allContracts.filter(c => c.country === currentFilter.value);
+      renderTable(filtered);
+    } else if (currentFilter.type === 'profession') {
+      const filtered = allContracts.filter(c => c.profession === currentFilter.value);
+      renderTable(filtered);
+    } else {
+      renderTable(allContracts);
+    }
+    
+  } catch (error) {
+    console.error("❌ Fetch Error:", error);
+    showToast('فشل الاتصال بالخادم', 'error');
+  }
+}
     function updateDashboard() {
       const total = allContracts.length;
       document.getElementById('stat-total').innerText = total;
@@ -713,19 +746,11 @@
   <td class="p-2 border border-gray-200 text-xs text-gray-600">${contract.expectedArrival || ''}</td>
   <td class="p-2 border border-gray-200 text-sm">${contract.agent || ''}</td>
   <td class="p-2 border border-gray-200">
-    <div class="flex flex-col gap-1">
-      <span class="px-2 py-1 rounded text-xs font-bold ${config.bg} ${config.text} inline-flex items-center justify-center gap-1 w-full">
-        <i class="fas ${config.icon}"></i> ${contract.status || 'مرفوع'}
-      </span>
-      <select onchange="updateStatus(${contract.rowIndex}, this.value)" class="text-xs border border-gray-300 rounded px-1 py-1 bg-white focus:border-emerald-500 outline-none w-full">
-        <option value="مرفوع" ${contract.status === 'مرفوع' ? 'selected' : ''}>مرفوع</option>
-        <option value="تحت الإجراء" ${contract.status === 'تحت الإجراء' ? 'selected' : ''}>تحت الإجراء</option>
-        <option value="بانتظار التأشيرة" ${contract.status === 'بانتظار التأشيرة' ? 'selected' : ''}>بانتظار التأشيرة</option>
-        <option value="تم الوصول" ${contract.status === 'تم الوصول' ? 'selected' : ''}>تم الوصول</option>
-        <option value="ملغي" ${contract.status === 'ملغي' ? 'selected' : ''}>ملغي</option>
-      </select>
-    </div>
-  </td>
+  <span class="px-3 py-2 rounded-lg text-xs font-bold ${config.bg} ${config.text} inline-flex items-center gap-2">
+    <i class="fas ${config.icon}"></i>
+    ${contract.status || 'مرفوع'}
+  </span>
+</td>
 `;
         tbody.appendChild(tr);
       });
