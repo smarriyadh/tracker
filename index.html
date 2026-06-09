@@ -381,59 +381,55 @@
     }
 
     function filterAndShowContracts(filterType, filterValue) {
-      showSection('contracts');
-      const searchInput = document.getElementById('searchInput');
-      
-      if (filterType === 'all') {
-  renderTable(allContracts);
-  searchInput.value = '';
-  searchInput.placeholder = '🔍 عرض جميع العقود';
-} else if (filterType === 'active') {
-  const filtered = allContracts.filter(c => c.status !== 'تم الوصول' && c.status !== 'ملغي');
-  renderTable(filtered);
-  searchInput.value = '';
-  searchInput.placeholder = '🔍 تصفية: العقود النشطة';
-} else if (filterType === 'upcoming') {
-  const today = new Date();
-  const nextMonth = new Date();
-  nextMonth.setDate(today.getDate() + 30);
-  const filtered = allContracts.filter(c => {
-    if (!c.expectedArrival) return false;
-    const arrDate = new Date(c.expectedArrival);
-    return arrDate >= today && arrDate <= nextMonth;
-  });
-  renderTable(filtered);
-  searchInput.value = '';
-  searchInput.placeholder = '🔍 تصفية: الوصول القادم (30 يوم)';
-} else if (filterType === 'contractId') {
-  searchInput.value = filterValue;
-  searchInput.placeholder = `🔍 عرض العقد: ${filterValue}`;
-  filterTable();
+  showSection('contracts');
+  const searchInput = document.getElementById('searchInput');
+  
+  if (filterType === 'all') {
+    renderTable(allContracts);
+    searchInput.value = '';
+    searchInput.placeholder = '🔍 عرض جميع العقود';
+  } else if (filterType === 'active') {
+    const filtered = allContracts.filter(c => c.status !== 'تم الوصول' && c.status !== 'ملغي');
+    renderTable(filtered);
+    searchInput.value = '';
+    searchInput.placeholder = '🔍 تصفية: العقود النشطة';
+  } else if (filterType === 'upcoming') {
+    const today = new Date();
+    const nextMonth = new Date();
+    nextMonth.setDate(today.getDate() + 30);
+    const filtered = allContracts.filter(c => {
+      if (!c.expectedArrival) return false;
+      const arrDate = new Date(c.expectedArrival);
+      return arrDate >= today && arrDate <= nextMonth;
+    });
+    renderTable(filtered);
+    searchInput.value = '';
+    searchInput.placeholder = '🔍 تصفية: الوصول القادم (30 يوم)';
+  } else if (filterType === 'contractId') {
+    searchInput.value = filterValue;
+    searchInput.placeholder = `🔍 عرض العقد: ${filterValue}`;
+    filterTable();
+  } else if (filterType === 'status') {
+    const filtered = allContracts.filter(c => c.status === filterValue);
+    renderTable(filtered);
+    searchInput.value = '';
+    searchInput.placeholder = `🔍 تصفية حسب الحالة: ${filterValue}`;
+  } else if (filterType === 'country') {
+    const filtered = allContracts.filter(c => c.country === filterValue);
+    renderTable(filtered);
+    searchInput.value = '';
+    searchInput.placeholder = `🔍 تصفية حسب الدولة: ${filterValue}`;
+  } else if (filterType === 'profession') {
+    const filtered = allContracts.filter(c => c.profession === filterValue);
+    renderTable(filtered);
+    searchInput.value = '';
+    searchInput.placeholder = `🔍 تصفية حسب المهنة: ${filterValue}`;
+  } else {
+    renderTable(allContracts);
+    searchInput.value = '';
+    searchInput.placeholder = '🔍 بحث (الاسم، الرقم، الجوال، العاملة)...';
+  }
 }
-      } else if (filterType === 'status') {
-        const filtered = allContracts.filter(c => c.status === filterValue);
-        renderTable(filtered);
-        searchInput.value = '';
-        searchInput.placeholder = `🔍 تصفية حسب الحالة: ${filterValue}`;
-      } else if (filterType === 'country') {
-        const filtered = allContracts.filter(c => c.country === filterValue);
-        renderTable(filtered);
-        searchInput.value = '';
-        searchInput.placeholder = `🔍 تصفية حسب الدولة: ${filterValue}`;
-      } else if (filterType === 'profession') {
-        const filtered = allContracts.filter(c => c.profession === filterValue);
-        renderTable(filtered);
-        searchInput.value = '';
-        searchInput.placeholder = `🔍 تصفية حسب المهنة: ${filterValue}`;
-      }
-      
-      if (!filterType) {
-        renderTable(allContracts);
-        searchInput.value = '';
-        searchInput.placeholder = '🔍 بحث (الاسم، الرقم، الجوال، العاملة)...';
-      }
-    }
-
     let allContracts = [];
     
     async function loadData() {
