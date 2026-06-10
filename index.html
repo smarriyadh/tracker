@@ -544,13 +544,13 @@
       nextMonth.setDate(today.getDate() + 30);
       
       // Count active contracts exceeding 30 days from submission date
-const thirtyDaysAgo = new Date();
-thirtyDaysAgo.setDate(today.getDate() - 30);
+const delayedThreshold = new Date();
+delayedThreshold.setDate(today.getDate() - 30);
 const delayedCount = allContracts.filter(c => {
   if (!c.submissionDate) return false;
   if (c.status === 'تم الوصول' || c.status === 'ملغي') return false;
   const subDate = new Date(c.submissionDate);
-  return subDate < thirtyDaysAgo;
+  return subDate < delayedThreshold;
 }).length;
 document.getElementById('stat-upcoming').innerText = delayedCount;
 
