@@ -115,18 +115,18 @@
             </div>
           </div>
 
-          <div class="stat-card bg-white p-6 rounded-2xl shadow-lg border-r-4 border-green-500 cursor-pointer" onclick="filterAndShowContracts('upcoming')">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-gray-500 text-sm font-medium">الوصول القادم</p>
-                <p class="text-4xl font-bold mt-2 text-green-600" id="stat-upcoming">0</p>
-                <p class="text-xs text-green-600 mt-1"><i class="fas fa-calendar-check"></i> خلال 30 يوم</p>
-              </div>
-              <div class="bg-green-100 p-4 rounded-full">
-                <i class="fas fa-plane-arrival text-3xl text-green-600"></i>
-              </div>
-            </div>
-          </div>
+          <div class="stat-card bg-white p-6 rounded-2xl shadow-lg border-r-4 border-red-500 cursor-pointer" onclick="filterAndShowContracts('delayed')">
+  <div class="flex items-center justify-between">
+    <div>
+      <p class="text-gray-500 text-sm font-medium">وصول متوقع</p>
+      <p class="text-4xl font-bold mt-2 text-red-600" id="stat-upcoming">0</p>
+      <p class="text-xs text-red-600 mt-1"><i class="fas fa-exclamation-circle"></i> تجاوز 30 يوم</p>
+    </div>
+    <div class="bg-red-100 p-4 rounded-full">
+      <i class="fas fa-plane-departure text-3xl text-red-600"></i>
+    </div>
+  </div>
+</div>
 
           <!-- NEW: Contracts in last 30 days -->
           <div class="stat-card bg-white p-6 rounded-2xl shadow-lg border-r-4 border-blue-500 cursor-pointer" onclick="filterAndShowContracts('recent')">
@@ -410,18 +410,18 @@
         renderTable(filtered);
         searchInput.value = '';
         searchInput.placeholder = '🔍 تصفية: العقود النشطة';
-      } else if (filterType === 'upcoming') {
-        const today = new Date();
-        const nextMonth = new Date();
-        nextMonth.setDate(today.getDate() + 30);
-        const filtered = allContracts.filter(c => {
-          if (!c.expectedArrival) return false;
-          const arrDate = new Date(c.expectedArrival);
-          return arrDate >= today && arrDate <= nextMonth;
-        });
-        renderTable(filtered);
-        searchInput.value = '';
-        searchInput.placeholder = '🔍 تصفية: الوصول القادم (30 يوم)';
+      } else if (filterType === 'delayed') {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(new Date().getDate() - 30);
+  const filtered = allContracts.filter(c => {
+    if (!c.submissionDate) return false;
+    if (c.status === 'تم الوصول' || c.status === 'ملغي') return false;
+    const subDate = new Date(c.submissionDate);
+    return subDate < thirtyDaysAgo;
+  });
+  renderTable(filtered);
+  searchInput.value = '';
+  searchInput.placeholder = '🔍 تصفية: عقود تجاوزت 30 يوم من التقديم';
       } else if (filterType === 'recent') {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(new Date().getDate() - 30);
@@ -490,16 +490,16 @@
         } else if (currentFilter.type === 'active') {
           const filtered = allContracts.filter(c => c.status !== 'تم الوصول' && c.status !== 'ملغي');
           renderTable(filtered);
-        } else if (currentFilter.type === 'upcoming') {
-          const today = new Date();
-          const nextMonth = new Date();
-          nextMonth.setDate(today.getDate() + 30);
-          const filtered = allContracts.filter(c => {
-            if (!c.expectedArrival) return false;
-            const arrDate = new Date(c.expectedArrival);
-            return arrDate >= today && arrDate <= nextMonth;
-          });
-          renderTable(filtered);
+        } else if (currentFilter.type === 'delayed') {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(new Date().getDate() - 30);
+  const filtered = allContracts.filter(c => {
+    if (!c.submissionDate) return false;
+    if (c.status === 'تم الوصول' || c.status === 'ملغي') return false;
+    const subDate = new Date(c.submissionDate);
+    return subDate < thirtyDaysAgo;
+  });
+  renderTable(filtered);
         } else if (currentFilter.type === 'recent') {
           const thirtyDaysAgo = new Date();
           thirtyDaysAgo.setDate(new Date().getDate() - 30);
@@ -543,12 +543,16 @@
       const nextMonth = new Date();
       nextMonth.setDate(today.getDate() + 30);
       
-      const upcomingCount = allContracts.filter(c => {
-        if (!c.expectedArrival) return false;
-        const arrDate = new Date(c.expectedArrival);
-        return arrDate >= today && arrDate <= nextMonth;
-      }).length;
-      document.getElementById('stat-upcoming').innerText = upcomingCount;
+      // Count active contracts exceeding 30 days from submission date
+const thirtyDaysAgo = new Date();
+thirtyDaysAgo.setDate(today.getDate() - 30);
+const delayedCount = allContracts.filter(c => {
+  if (!c.submissionDate) return false;
+  if (c.status === 'تم الوصول' || c.status === 'ملغي') return false;
+  const subDate = new Date(c.submissionDate);
+  return subDate < thirtyDaysAgo;
+}).length;
+document.getElementById('stat-upcoming').innerText = delayedCount;
 
       // Calculate contracts from last 30 days
       const thirtyDaysAgo = new Date();
