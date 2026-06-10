@@ -165,9 +165,9 @@
 
           <div class="bg-white p-6 rounded-2xl shadow-lg lg:col-span-2">
             <h3 class="font-bold text-xl mb-4 text-gray-800 flex items-center gap-2">
-              <i class="fas fa-clock text-orange-600"></i>
-              آخر العقود المضافة
-            </h3>
+  <i class="fas fa-exclamation-triangle text-red-600"></i>
+  العقود القريبة من الانتهاء
+</h3>
             <div id="recent-contracts" class="space-y-3"></div>
           </div>
         </div>
@@ -580,29 +580,63 @@
         `).join('');
       document.getElementById('profession-list').innerHTML = professionListHtml || '<p class="text-gray-400 text-center">لا توجد بيانات</p>';
 
-      const recentContracts = [...allContracts]
-        .sort((a, b) => (b.rowIndex || 0) - (a.rowIndex || 0))
-        .slice(0, 5);
-      
-      const recentHtml = recentContracts.map(c => `
-        <div class="flex items-center justify-between p-4 bg-gradient-to-l from-emerald-50 to-white rounded-xl border border-emerald-100 clickable-item hover:shadow-lg transition" onclick="filterAndShowContracts('contractId', '${c.id}')">
-          <div class="flex items-center gap-4">
-            <div class="bg-emerald-100 p-3 rounded-full">
-              <i class="fas fa-file-contract text-emerald-600"></i>
-            </div>
-            <div>
-              <p class="font-bold text-gray-800 hover:text-emerald-600">${c.id || 'غير محدد'}</p>
-              <p class="text-sm text-gray-500">${c.clientName || ''} - ${c.workerName || ''}</p>
-            </div>
-          </div>
-          <div class="text-left">
-            <p class="text-sm font-bold text-emerald-600">${c.status || 'مرفوع'}</p>
-            <p class="text-xs text-gray-400">${formatMonthDisplay(c.month)}</p>
-          </div>
+      // Find contracts close to expiring (within 90 days from submission date)
+const today = new Date();
+const expiringContracts = allContracts
+  .filter(c => {
+    if (!c.submissionDate || !c.contractDuration) return false;
+    const submissionDate = new Date(c.submissionDate);
+    const expiryDate = new Date(submissionDate);
+    expiryDate.setDate(submissionDate.getDate() + parseInt(c.contractDuration));
+    const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+    return daysUntilExpiry <= 30 && daysUntilExpiry >= 0; // Show contracts expiring within 30 days
+  })
+  .sort((a, b) => {
+    // Sort by days until expiry (closest first)
+    const aDate = new Date(a.submissionDate);
+    aDate.setDate(aDate.getDate() + parseInt(a.contractDuration));
+    const bDate = new Date(b.submissionDate);
+    bDate.setDate(bDate.getDate() + parseInt(b.contractDuration));
+    return aDate - bDate;
+  })
+  .slice(0, 5);
+
+const expiringHtml = expiringContracts.map(c => {
+  const submissionDate = new Date(c.submissionDate);
+  const expiryDate = new Date(submissionDate);
+  expiryDate.setDate(submissionDate.getDate() + parseInt(c.contractDuration));
+  const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+  
+  let urgencyColor = 'text-green-600';
+  let bgColor = 'bg-green-50';
+  if (daysUntilExpiry <= 7) {
+    urgencyColor = 'text-red-600';
+    bgColor = 'bg-red-50';
+  } else if (daysUntilExpiry <= 14) {
+    urgencyColor = 'text-yellow-600';
+    bgColor = 'bg-yellow-50';
+  }
+  
+  return `
+    <div class="flex items-center justify-between p-4 ${bgColor} rounded-xl border border-gray-200 clickable-item hover:shadow-lg transition" onclick="filterAndShowContracts('contractId', '${c.id}')">
+      <div class="flex items-center gap-4">
+        <div class="${bgColor} p-3 rounded-full">
+          <i class="fas fa-hourglass-half ${urgencyColor}"></i>
         </div>
-      `).join('');
-      document.getElementById('recent-contracts').innerHTML = recentHtml || '<p class="text-gray-400 text-center">لا توجد عقود حديثة</p>';
-    }
+        <div>
+          <p class="font-bold text-gray-800 hover:text-emerald-600">${c.id || 'غير محدد'}</p>
+          <p class="text-sm text-gray-500">${c.clientName || ''} - ${c.workerName || ''}</p>
+        </div>
+      </div>
+      <div class="text-left">
+        <p class="text-sm font-bold ${urgencyColor}">${daysUntilExpiry} يوم</p>
+        <p class="text-xs text-gray-400">متبقي للانتهاء</p>
+      </div>
+    </div>
+  `;
+}).join('');
+
+document.getElementById('recent-contracts').innerHTML = expiringHtml || '<p class="text-gray-400 text-center">لا توجد عقود قريبة من الانتهاء</p>';
 
     function updateStatusChart(statuses) {
       const ctx = document.getElementById('statusChart').getContext('2d');
