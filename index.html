@@ -581,6 +581,7 @@
       document.getElementById('profession-list').innerHTML = professionListHtml || '<p class="text-gray-400 text-center">لا توجد بيانات</p>';
 
       // Find contracts close to expiring (within 90 days from submission date)
+// Find contracts close to expiring (within 90 days from submission date)
 const todayDate = new Date();
 const expiringContracts = allContracts
   .filter(c => {
@@ -589,10 +590,9 @@ const expiringContracts = allContracts
     const expiryDate = new Date(submissionDate);
     expiryDate.setDate(submissionDate.getDate() + parseInt(c.contractDuration));
     const daysUntilExpiry = Math.ceil((expiryDate - todayDate) / (1000 * 60 * 60 * 24));
-    return daysUntilExpiry <= 30 && daysUntilExpiry >= 0; // Show contracts expiring within 30 days
+    return daysUntilExpiry <= 30 && daysUntilExpiry >= 0;
   })
   .sort((a, b) => {
-    // Sort by days until expiry (closest first)
     const aDate = new Date(a.submissionDate);
     aDate.setDate(aDate.getDate() + parseInt(a.contractDuration));
     const bDate = new Date(b.submissionDate);
