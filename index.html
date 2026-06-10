@@ -581,14 +581,14 @@
       document.getElementById('profession-list').innerHTML = professionListHtml || '<p class="text-gray-400 text-center">لا توجد بيانات</p>';
 
       // Find contracts close to expiring (within 90 days from submission date)
-const today = new Date();
+const todayDate = new Date();
 const expiringContracts = allContracts
   .filter(c => {
     if (!c.submissionDate || !c.contractDuration) return false;
     const submissionDate = new Date(c.submissionDate);
     const expiryDate = new Date(submissionDate);
     expiryDate.setDate(submissionDate.getDate() + parseInt(c.contractDuration));
-    const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+    const daysUntilExpiry = Math.ceil((expiryDate - todayDate) / (1000 * 60 * 60 * 24));
     return daysUntilExpiry <= 30 && daysUntilExpiry >= 0; // Show contracts expiring within 30 days
   })
   .sort((a, b) => {
@@ -605,7 +605,7 @@ const expiringHtml = expiringContracts.map(c => {
   const submissionDate = new Date(c.submissionDate);
   const expiryDate = new Date(submissionDate);
   expiryDate.setDate(submissionDate.getDate() + parseInt(c.contractDuration));
-  const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+  const daysUntilExpiry = Math.ceil((expiryDate - todayDate) / (1000 * 60 * 60 * 24));
   
   let urgencyColor = 'text-green-600';
   let bgColor = 'bg-green-50';
