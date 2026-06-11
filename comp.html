@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-9<head>
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Excel Sheet Comparator</title>
@@ -75,6 +75,55 @@
             border: 1px solid var(--border-color);
             border-radius: 4px;
             background: white;
+        }
+
+        /* Filter Options Styling */
+        .filter-group {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f1f3f5;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .filter-group h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #495057;
+        }
+
+        .filter-inputs {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-item {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-item label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .filter-item input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .filter-group small {
+            display: block;
+            margin-top: 10px;
+            color: #6c757d;
+            font-size: 13px;
         }
 
         .btn-compare {
@@ -209,6 +258,22 @@
         </div>
     </div>
 
+    <!-- NEW FILTER OPTIONS SECTION -->
+    <div class="filter-group">
+        <h3>Filter Options (Optional)</h3>
+        <div class="filter-inputs">
+            <div class="filter-item">
+                <label for="rowFilter">Rows to compare:</label>
+                <input type="text" id="rowFilter" placeholder="All (e.g., 1-10, 15, 20-30)">
+            </div>
+            <div class="filter-item">
+                <label for="colFilter">Columns to compare:</label>
+                <input type="text" id="colFilter" placeholder="All (e.g., A-C, E, 1-5)">
+            </div>
+        </div>
+        <small>Note: Use 1-based numbers or Excel column letters. Leave blank or type "All" to include everything.</small>
+    </div>
+
     <button class="btn-compare" id="compareBtn" onclick="compareFiles()">Compare Sheets</button>
     
     <div id="loading">Processing files, please wait...</div>
@@ -240,10 +305,8 @@
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    // Get the first sheet
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
-                    // Convert to array of arrays (header: 1), keeping empty cells as empty strings
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
                     resolve(jsonData);
                 } catch (error) {
@@ -253,6 +316,53 @@
             reader.onerror = (error) => reject(error);
             reader.readAsArrayBuffer(file);
         });
+    }
+
+    // Convert Excel column letters (A, B, ..., Z, AA, AB...) to 1-based index
+    function parseVal(valStr) {
+        valStr = valStr.trim();
+        if (/^[A-Z]+$/i.test(valStr)) {
+            let index = 0;
+            for (let i = 0; i < valStr.length; i++) {
+                index = index * 26 + (valStr.toUpperCase().charCodeAt(i) - 64);
+            }
+            return index;
+        }
+        return parseInt(valStr, 10);
+    }
+
+    // Parse range strings like "1-5, 8" or "A-C, E" into an array of 0-based indices
+    function parseRanges(inputStr, maxVal) {
+        if (!inputStr || inputStr.trim().toLowerCase() === 'all') {
+            return Array.from({ length: maxVal }, (_, i) => i);
+        }
+        
+        const indices = new Set();
+        const parts = inputStr.split(',');
+        
+        for (let part of parts) {
+            part = part.trim();
+            if (!part) continue;
+            
+            if (part.includes('-')) {
+                const [startStr, endStr] = part.split('-');
+                const start = parseVal(startStr);
+                const end = parseVal(endStr);
+                
+                if (!isNaN(start) && !isNaN(end)) {
+                    for (let i = Math.max(1, start); i <= Math.min(maxVal, end); i++) {
+                        indices.add(i - 1); // Convert to 0-based
+                    }
+                }
+            } else {
+                const val = parseVal(part);
+                if (!isNaN(val) && val >= 1 && val <= maxVal) {
+                    indices.add(val - 1); // Convert to 0-based
+                }
+            }
+        }
+        
+        return Array.from(indices).sort((a, b) => a - b);
     }
 
     // Format a row array into HTML, highlighting differing cells
@@ -267,15 +377,13 @@
             
             let displayValue = cellStr === "" ? '<span class="empty-cell">[blank]</span>' : escapeHtml(cellStr);
             
-            // If comparing and the cells are different, highlight it
             if (compareRow !== null && cellStr !== compareCell) {
                 return `<span class="cell-diff">${displayValue}</span>`;
             }
             return `<span class="cell-content">${displayValue}</span>`;
-        }).join(' | '); // Using ' | ' as a visual separator between columns for compact viewing
+        }).join(' | ');
     }
 
-    // Escape HTML to prevent XSS
     function escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
@@ -296,7 +404,6 @@
             return;
         }
 
-        // UI State: Loading
         compareBtn.disabled = true;
         loading.style.display = 'block';
         resultsTable.style.display = 'none';
@@ -304,26 +411,55 @@
         resultsBody.innerHTML = '';
 
         try {
-            // Read both files concurrently
             const [data1, data2] = await Promise.all([
                 readFile(file1Input.files[0]),
-                readFile(file2Input.files[1] || file2Input.files[0]) // Fallback just in case
+                readFile(file2Input.files[0])
             ]);
 
             const maxRows = Math.max(data1.length, data2.length);
+            const maxCols = Math.max(
+                data1.reduce((max, row) => Math.max(max, row.length), 0),
+                data2.reduce((max, row) => Math.max(max, row.length), 0)
+            );
+
+            if (maxCols === 0 && maxRows === 0) {
+                alert("Both files appear to be completely empty.");
+                return;
+            }
+
+            const rowFilterStr = document.getElementById('rowFilter').value;
+            const colFilterStr = document.getElementById('colFilter').value;
+
+            const selectedRows = parseRanges(rowFilterStr, maxRows);
+            const selectedCols = parseRanges(colFilterStr, maxCols);
+
+            if (selectedRows.length === 0) {
+                alert("No valid rows selected. Please check your row filter input.");
+                return;
+            }
+            if (selectedCols.length === 0) {
+                alert("No valid columns selected. Please check your column filter input.");
+                return;
+            }
+
+            // Helper to extract only the selected columns from a row
+            const extractCols = (row) => {
+                if (!row) return selectedCols.map(() => "");
+                return selectedCols.map(cIdx => (row[cIdx] !== undefined) ? row[cIdx] : "");
+            };
+
             let matchCount = 0;
             let diffCount = 0;
             let onlyIn1Count = 0;
             let onlyIn2Count = 0;
 
-            // Compare line by line
-            for (let i = 0; i < maxRows; i++) {
-                const row1 = data1[i] || [];
-                const row2 = data2[i] || [];
-                const lineNum = i + 1;
+            for (let i = 0; i < selectedRows.length; i++) {
+                const rowIndex = selectedRows[i];
+                const r1 = extractCols(data1[rowIndex]);
+                const r2 = extractCols(data2[rowIndex]);
+                const lineNum = rowIndex + 1; // 1-based original row number
 
-                // Check if rows are exactly identical
-                const isMatch = JSON.stringify(row1) === JSON.stringify(row2);
+                const isMatch = JSON.stringify(r1) === JSON.stringify(r2);
                 
                 const tr = document.createElement('tr');
                 let statusHtml = '';
@@ -335,13 +471,14 @@
                     statusHtml = '<span class="status-badge status-match">Match</span>';
                     tr.innerHTML = `
                         <td>${lineNum}</td>
-                        <td>${formatRow(row1)}</td>
-                        <td>${formatRow(row2)}</td>
+                        <td>${formatRow(r1)}</td>
+                        <td>${formatRow(r2)}</td>
                         <td>${statusHtml}</td>
                     `;
                 } else {
-                    const isEmpty1 = row1.length === 0 || (row1.length === 1 && row1[0] === "");
-                    const isEmpty2 = row2.length === 0 || (row2.length === 1 && row2[0] === "");
+                    // Check if the filtered row is effectively empty
+                    const isEmpty1 = r1.every(cell => String(cell).trim() === "");
+                    const isEmpty2 = r2.every(cell => String(cell).trim() === "");
 
                     if (isEmpty1 && !isEmpty2) {
                         onlyIn2Count++;
@@ -350,7 +487,7 @@
                         tr.innerHTML = `
                             <td>${lineNum}</td>
                             <td><span class="empty-cell">[Line does not exist]</span></td>
-                            <td>${formatRow(row2)}</td>
+                            <td>${formatRow(r2)}</td>
                             <td>${statusHtml}</td>
                         `;
                     } else if (!isEmpty1 && isEmpty2) {
@@ -359,7 +496,7 @@
                         statusHtml = '<span class="status-badge status-only-1">Only in Sheet 1</span>';
                         tr.innerHTML = `
                             <td>${lineNum}</td>
-                            <td>${formatRow(row1)}</td>
+                            <td>${formatRow(r1)}</td>
                             <td><span class="empty-cell">[Line does not exist]</span></td>
                             <td>${statusHtml}</td>
                         `;
@@ -367,11 +504,10 @@
                         diffCount++;
                         rowClass = 'row-diff';
                         statusHtml = '<span class="status-badge status-diff">Different</span>';
-                        // Pass row2 to formatRow to highlight specific cell differences
                         tr.innerHTML = `
                             <td>${lineNum}</td>
-                            <td>${formatRow(row1, row2)}</td>
-                            <td>${formatRow(row2, row1)}</td>
+                            <td>${formatRow(r1, r2)}</td>
+                            <td>${formatRow(r2, r1)}</td>
                             <td>${statusHtml}</td>
                         `;
                     }
@@ -381,7 +517,6 @@
                 resultsBody.appendChild(tr);
             }
 
-            // Update Summary
             summaryDiv.innerHTML = `
                 <span class="summary-badge badge-match">✅ Matches: ${matchCount}</span>
                 <span class="summary-badge badge-diff">⚠️ Different: ${diffCount}</span>
@@ -395,7 +530,6 @@
             console.error(error);
             alert("An error occurred while reading the files. Please ensure they are valid Excel or CSV files.");
         } finally {
-            // UI State: Reset
             compareBtn.disabled = false;
             loading.style.display = 'none';
         }
